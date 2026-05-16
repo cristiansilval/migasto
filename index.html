@@ -292,6 +292,14 @@
     .settings-badge     { display: inline-flex; align-items: center; background: #dcfce7; color: #166534; border-radius: 99px; padding: 3px 10px; font-size: .72rem; font-weight: 700; }
     .settings-badge.off { background: var(--bg); color: var(--text-2); }
 
+    /* Collapsible settings sub-sections */
+    .sc-card  { background: var(--card); border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+    .sc-hdr   { display: flex; justify-content: space-between; align-items: center; width: 100%; background: none; border: none; padding: 14px 18px; cursor: pointer; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); font-weight: 700; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    .sc-hdr:active { background: var(--bg); }
+    .sc-arrow { font-size: .6rem; transition: transform .2s; display: inline-block; }
+    .sc-arrow.open { transform: rotate(180deg); }
+    .sc-body  { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px; }
+
     /* Row with input + button */
     .settings-field-row { display: flex; gap: 8px; align-items: center; }
     .settings-field-row input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 11px 12px; font-size: .93rem; color: var(--text); background: var(--bg); outline: none; font-family: inherit; -webkit-appearance: none; }
@@ -571,7 +579,11 @@ const App = (() => {
     'Arriendo','Dividendo','Crédito','Celular','Internet','Servicios',
     'Seguro','Pensión','Cuota vehículo','Medicina prepagada','Colegio','Gimnasio'
   ];
-  const DEFAULT_SAV_CATS = ['Fondo de emergencias','Fondos mutuos','Cuenta de ahorro','Alcancía','Inversión','Viaje'];
+  const DEFAULT_SAV_CATS   = ['Fondo de emergencias','Fondos mutuos','Cuenta de ahorro','Alcancía','Inversión','Viaje'];
+  const DEFAULT_MOV_CATS   = ['Comida/Casa','Gastos médicos','Entretenimiento','Hogar','Regalos'];
+  const DEFAULT_FIXED_CATS = ['Comida/Casa','Gastos médicos','Entretenimiento','Hogar','Regalos'];
+
+  let _openSections = new Set(); // collapsible section state (not persisted)
 
   let state = {
     movements:    [],
@@ -584,6 +596,8 @@ const App = (() => {
     currentMonth: null,
     suggestions:  null,
     savingsCats:  null, // categorías de ahorro personalizables
+    movCats:      null, // categorías gastos del mes
+    fixedCats:    null, // categorías gastos fijos
     username:     ''
   };
 
@@ -599,6 +613,8 @@ const App = (() => {
       state.showAmounts   = d.showAmounts   !== false;
       state.suggestions   = d.suggestions   || DEFAULT_SUGGESTIONS.slice();
       state.savingsCats   = d.savingsCats   || DEFAULT_SAV_CATS.slice();
+      state.movCats       = d.movCats       || DEFAULT_MOV_CATS.slice();
+      state.fixedCats     = d.fixedCats     || DEFAULT_FIXED_CATS.slice();
       state.username      = d.username      || '';
     } catch {}
   }
@@ -607,7 +623,8 @@ const App = (() => {
       movements: state.movements, fixedExpenses: state.fixedExpenses,
       incomeItems: state.incomeItems, savings: state.savings,
       income: state.income, showAmounts: state.showAmounts,
-      suggestions: state.suggestions, savingsCats: state.savingsCats, username: state.username
+      suggestions: state.suggestions, savingsCats: state.savingsCats,
+      movCats: state.movCats, fixedCats: state.fixedCats, username: state.username
     }));
   }
 
@@ -664,8 +681,20 @@ const App = (() => {
     return d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'short'});
   }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  const CAT_PALETTE = [
+    {color:'#ea580c',bg:'#fff7ed'},{color:'#dc2626',bg:'#fef2f2'},{color:'#7c3aed',bg:'#f5f3ff'},
+    {color:'#2563eb',bg:'#eff6ff'},{color:'#db2777',bg:'#fdf2f8'},{color:'#0891b2',bg:'#ecfeff'},
+    {color:'#059669',bg:'#ecfdf5'},{color:'#d97706',bg:'#fffbeb'}
+  ];
+  function catStyle(cat) {
+    if (!cat) return {label:'Sin categoría', color:'#64748b', bg:'#f1f5f9'};
+    if (CATS[cat]) return CATS[cat]; // backward compat: old key-based data
+    let h=0; for(let i=0;i<cat.length;i++) h=(h*31+cat.charCodeAt(i))&0xffff;
+    const p = CAT_PALETTE[h % CAT_PALETTE.length];
+    return {label:cat, color:p.color, bg:p.bg};
+  }
   function catBadge(cat) {
-    const c = CATS[cat||''] || CATS[''];
+    const c = catStyle(cat);
     return `<span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>`;
   }
 
@@ -785,18 +814,12 @@ const App = (() => {
     if(state.suggestions.includes(val)){ toast('Ya existe esa sugerencia'); return; }
     state.suggestions.push(val); save();
     el.value = '';
-    // repintar el área de chips + lista
-    const wrap = document.getElementById('chips-collapse')?.querySelector('.chips-wrap');
-    if(wrap) wrap.innerHTML = renderChipsInner();
-    const list = document.getElementById('suggestions-list');
-    if(list) list.innerHTML = renderSuggestionsList();
+    render(); // re-render settings so list updates
     toast(`"${val}" agregada`);
   }
   function deleteSuggestion(idx) {
     state.suggestions.splice(idx,1); save();
-    const wrap=document.getElementById('chips-collapse')?.querySelector('.chips-wrap');
-    if(wrap) wrap.innerHTML=renderChipsInner();
-    toast('Sugerencia eliminada');
+    render(); toast('Sugerencia eliminada');
   }
   function renderChipsInner() {
     return (state.suggestions||[]).map((s,i)=>
@@ -816,6 +839,26 @@ const App = (() => {
   function deleteSavingsCat(idx) {
     state.savingsCats.splice(idx,1); save(); render();
   }
+
+  function toggleSection(id) {
+    if(_openSections.has(id)) _openSections.delete(id); else _openSections.add(id);
+    const el = document.getElementById('main-content');
+    if(el && state.tab==='settings') { el.innerHTML = renderSettings(); bindForms(); }
+  }
+  function addMovCatUI() {
+    const el = document.getElementById('new-mov-cat'); if(!el) return;
+    const val = el.value.trim(); if(!val) return;
+    if(state.movCats.includes(val)){ toast('Ya existe'); return; }
+    state.movCats.push(val); save(); el.value=''; render(); toast(`"${val}" agregada`);
+  }
+  function deleteMovCat(idx) { state.movCats.splice(idx,1); save(); render(); }
+  function addFixedCatUI() {
+    const el = document.getElementById('new-fixed-cat'); if(!el) return;
+    const val = el.value.trim(); if(!val) return;
+    if(state.fixedCats.includes(val)){ toast('Ya existe'); return; }
+    state.fixedCats.push(val); save(); el.value=''; render(); toast(`"${val}" agregada`);
+  }
+  function deleteFixedCat(idx) { state.fixedCats.splice(idx,1); save(); render(); }
 
   function resetAuth() {
     if (!confirm('¿Cambiar método de acceso? Deberás configurarlo de nuevo al reabrir la app.')) return;
@@ -912,7 +955,9 @@ const App = (() => {
   }
 
   function renderDailyForm() {
-    const catOpts = Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+    const movCats = state.movCats || DEFAULT_MOV_CATS;
+    const catOpts = `<option value="">Sin categoría</option>`
+      + movCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     return `<form class="form-card" id="expense-form" autocomplete="off">
       <div><label for="input-item">¿En qué gastaste?</label>
         <input type="text" id="input-item" placeholder="Ej: Almuerzo, Bus, Café..." maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
@@ -932,7 +977,7 @@ const App = (() => {
     const total = Object.values(cats).reduce((s,v)=>s+v,0);
     const rows  = Object.entries(cats).sort(([,a],[,b])=>b-a).map(([cat,amt])=>{
       const pct = total ? (amt/total*100) : 0;
-      const c   = CATS[cat]||CATS[''];
+      const c   = catStyle(cat);
       return `<div class="kpi-row">
         <span class="kpi-cat">${c.label}</span>
         <div class="kpi-bar-wrap"><div class="kpi-bar" style="width:${pct.toFixed(0)}%;background:${c.color}"></div></div>
@@ -1003,15 +1048,17 @@ const App = (() => {
 
   // ── Gastos Fijos ──────────────────────────────────────────────────
   function renderFixed() {
-    const ft    = fixedTotal();
-    const catOpts = Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+    const ft       = fixedTotal();
+    const fixedCats = state.fixedCats || DEFAULT_FIXED_CATS;
+    const catOpts  = `<option value="">Sin categoría</option>`
+      + fixedCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     const chips = renderChipsInner();
 
     let list = state.fixedExpenses.length ? '' : `<div class="empty-state"><p>Sin gastos fijos aún.<br>Agrega arriendo, crédito u otros pagos mensuales.</p></div>`;
     if (state.fixedExpenses.length) {
       list += `<p class="section-title">Gastos configurados</p>`;
       state.fixedExpenses.forEach(f=>{
-        const c = CATS[f.category||'']||CATS[''];
+        const c = catStyle(f.category);
         list += `<div class="movement-item">
           <div class="movement-info">
             <div class="movement-name">${esc(f.item)}</div>
@@ -1036,13 +1083,6 @@ const App = (() => {
           <span>Sugerencias rápidas</span><span class="toggle-arrow">▼</span>
         </button>
         <div class="chips-collapse" id="chips-collapse"><div class="chips-wrap">${chips}</div></div>
-      </div>
-      <div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-          <input type="text" id="input-new-suggestion" placeholder="Nueva sugerencia..." maxlength="30" autocorrect="off" spellcheck="false" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:.88rem;color:var(--text);background:var(--bg);outline:none;font-family:inherit"/>
-          <button type="button" style="padding:9px 14px;background:var(--fixed);color:#fff;border:none;border-radius:var(--radius-sm);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-tap-highlight-color:transparent" onclick="App.addSuggestionUI()">+ Agregar</button>
-        </div>
-        <div id="suggestions-list" style="max-height:160px;overflow-y:auto">${renderSuggestionsList()}</div>
       </div>
       <div><label for="input-fixed-item">Item</label>
         <input type="text" id="input-fixed-item" placeholder="Ej: Arriendo, Crédito..." maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
@@ -1073,7 +1113,7 @@ const App = (() => {
     for(const [date,items] of Object.entries(groups)) {
       html+=`<p class="section-title">${date}</p>`;
       items.forEach(m=>{
-        const c=CATS[m.category||'']||CATS[''];
+        const c=catStyle(m.category);
         html+=`<div class="movement-item">
           <div class="movement-info">
             <div class="movement-name">${esc(m.item)}</div>
@@ -1089,6 +1129,18 @@ const App = (() => {
     }
     html+=`<div class="total-bar"><span>Total del mes</span><strong>${disp(dt)}</strong></div>`;
     return html;
+  }
+
+  // ── Collapsible section helper ────────────────────────────────────
+  function scSection(id, label, bodyHtml) {
+    const open = _openSections.has(id);
+    return `<div class="settings-section"><div class="sc-card">
+      <button class="sc-hdr" onclick="App.toggleSection('${id}')">
+        <span>${label}</span>
+        <span class="sc-arrow ${open?'open':''}">▼</span>
+      </button>
+      ${open ? `<div class="sc-body">${bodyHtml}</div>` : ''}
+    </div></div>`;
   }
 
   // ── Ajustes ───────────────────────────────────────────────────────
@@ -1164,20 +1216,53 @@ const App = (() => {
       </div>
     </div>
 
-    <div class="settings-section">
-      <p class="settings-section-lbl">Categorías de ahorro</p>
-      <div class="settings-card">
-        ${(state.savingsCats||[]).map((c,i)=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:.88rem">${esc(c)}</span>
-            <button class="btn-delete" onclick="App.deleteSavingsCat(${i})">×</button>
-          </div>`).join('')}
-        <div class="settings-field-row" style="margin-top:6px">
-          <input type="text" id="new-sav-cat" placeholder="Ej: Fondo casa" maxlength="30"/>
-          <button class="btn-settings-save" onclick="App.addSavingsCatUI()">+ Agregar</button>
-        </div>
+    ${scSection('sc-suggestions', 'Sugerencias rápidas', `
+      ${(state.suggestions||[]).map((s,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.88rem">${esc(s)}</span>
+          <button class="btn-delete" onclick="App.deleteSuggestion(${i})">×</button>
+        </div>`).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:6px 0">Sin sugerencias</p>`}
+      <div class="settings-field-row" style="margin-top:4px">
+        <input type="text" id="input-new-suggestion" placeholder="Ej: Arriendo, Gimnasio..." maxlength="30" autocorrect="off" spellcheck="false"/>
+        <button class="btn-settings-save" onclick="App.addSuggestionUI()">+ Agregar</button>
       </div>
-    </div>
+    `)}
+
+    ${scSection('sc-mov-cats', 'Categoría gastos mensuales', `
+      ${(state.movCats||[]).map((c,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.88rem">${esc(c)}</span>
+          <button class="btn-delete" onclick="App.deleteMovCat(${i})">×</button>
+        </div>`).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:6px 0">Sin categorías</p>`}
+      <div class="settings-field-row" style="margin-top:4px">
+        <input type="text" id="new-mov-cat" placeholder="Ej: Transporte, Educación..." maxlength="30" autocorrect="off" spellcheck="false"/>
+        <button class="btn-settings-save" onclick="App.addMovCatUI()">+ Agregar</button>
+      </div>
+    `)}
+
+    ${scSection('sc-fixed-cats', 'Categoría gasto fijo', `
+      ${(state.fixedCats||[]).map((c,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.88rem">${esc(c)}</span>
+          <button class="btn-delete" onclick="App.deleteFixedCat(${i})">×</button>
+        </div>`).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:6px 0">Sin categorías</p>`}
+      <div class="settings-field-row" style="margin-top:4px">
+        <input type="text" id="new-fixed-cat" placeholder="Ej: Servicios, Deudas..." maxlength="30" autocorrect="off" spellcheck="false"/>
+        <button class="btn-settings-save" onclick="App.addFixedCatUI()">+ Agregar</button>
+      </div>
+    `)}
+
+    ${scSection('sc-sav-cats', 'Categoría ahorro', `
+      ${(state.savingsCats||[]).map((c,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.88rem">${esc(c)}</span>
+          <button class="btn-delete" onclick="App.deleteSavingsCat(${i})">×</button>
+        </div>`).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:6px 0">Sin categorías</p>`}
+      <div class="settings-field-row" style="margin-top:4px">
+        <input type="text" id="new-sav-cat" placeholder="Ej: Fondo casa, Viaje..." maxlength="30" autocorrect="off" spellcheck="false"/>
+        <button class="btn-settings-save" onclick="App.addSavingsCatUI()">+ Agregar</button>
+      </div>
+    `)}
 
     <div class="settings-section">
       <p class="settings-section-lbl">Acerca de</p>
@@ -1264,7 +1349,9 @@ const App = (() => {
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
     saveSettingsInline, saveUsername, resetAuth, goMonth,
     doUpdate, refreshIfSettings,
-    addSuggestionUI, addSavingsCatUI, deleteSavingsCat
+    addSuggestionUI, addSavingsCatUI, deleteSavingsCat,
+    toggleSection,
+    addMovCatUI, deleteMovCat, addFixedCatUI, deleteFixedCat
   };
 })();
 
