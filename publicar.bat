@@ -14,6 +14,12 @@ cd /d "C:\Users\ASUS\Mi unidad\proyecto-mm\Gastos"
 set /p MENSAJE="Que cambiaste? (Enter para continuar): "
 if "%MENSAJE%"=="" set MENSAJE=actualizacion
 
+:: Actualizar version del cache en sw.js para forzar actualizacion en celulares
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set dt=%%I
+set VERSION=%dt:~0,12%
+powershell -Command "(Get-Content sw.js) -replace \"const CACHE = 'migasto-v\d+';\", \"const CACHE = 'migasto-v%VERSION%';\" | Set-Content sw.js"
+echo Cache version actualizada: migasto-v%VERSION%
+
 :: Git
 echo.
 echo Subiendo a GitHub...
@@ -30,6 +36,9 @@ echo.
 echo ================================
 echo  Listo! App actualizada en:
 echo  https://migasto-cristian.netlify.app
+echo.
+echo  En el celular: desliza para
+echo  refrescar y veran los cambios.
 echo ================================
 echo.
 pause
