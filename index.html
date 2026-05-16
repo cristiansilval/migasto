@@ -78,11 +78,11 @@
     .pin-key.pin-del   { font-size: 1.25rem; }
     .pin-msg { font-size: .82rem; margin-top: 14px; min-height: 18px; color: #fca5a5; font-weight: 600; }
 
-    /* ═══ UPDATE BANNER ═══════════════════════════════════════════════ */
-    #update-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 990; background: #065f46; color: #fff; padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .85rem; font-weight: 600; animation: slideDown .3s ease; }
-    @keyframes slideDown { from{transform:translateX(-50%) translateY(-100%)} to{transform:translateX(-50%) translateY(0)} }
-    .btn-update { background: rgba(255,255,255,.2); border: none; color: #fff; padding: 6px 14px; border-radius: 99px; font-size: .8rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
-    .btn-update:active { background: rgba(255,255,255,.35); }
+    /* ── Update notice en Ajustes ── */
+    .update-notice { background: #d1fae5; border: 1.5px solid #6ee7b7; border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .update-notice-txt { font-size: .85rem; font-weight: 600; color: #065f46; }
+    .btn-update-inline { background: #065f46; border: none; color: #fff; padding: 9px 16px; border-radius: var(--radius-sm); font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+    .btn-update-inline:active { opacity: .85; }
 
     /* ═══ APP LAYOUT ═══════════════════════════════════════════════════ */
     #app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
@@ -92,7 +92,6 @@
     .header-left h1  { font-size: 1.15rem; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
     .header-username { font-size: .72rem; opacity: .75; font-weight: 500; margin-top: 2px; }
     .header-right    { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .header-sub      { font-size: .72rem; opacity: .8; font-weight: 400; display: block; margin-top: 1px; text-align: right; }
     .btn-eye-header  { background: rgba(255,255,255,.2); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background .15s; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
     .btn-eye-header:active { background: rgba(255,255,255,.35); }
 
@@ -423,12 +422,6 @@
 
 </div>
 
-<!-- ═══ UPDATE BANNER ═════════════════════════════════════════════════ -->
-<div id="update-banner" class="hidden">
-  <span>🎉 Nueva versión disponible</span>
-  <button class="btn-update" id="btn-do-update">Actualizar</button>
-</div>
-
 <!-- ═══ APP ═══════════════════════════════════════════════════════════ -->
 <div id="app">
   <header>
@@ -437,9 +430,6 @@
       <div class="header-username" id="header-username"></div>
     </div>
     <div class="header-right">
-      <div>
-        <span class="header-sub" id="header-sub">Registro de gastos</span>
-      </div>
       <button class="btn-eye-header" id="btn-eye" title="Mostrar/ocultar montos"></button>
     </div>
   </header>
@@ -581,17 +571,19 @@ const App = (() => {
     'Arriendo','Dividendo','Crédito','Celular','Internet','Servicios',
     'Seguro','Pensión','Cuota vehículo','Medicina prepagada','Colegio','Gimnasio'
   ];
+  const DEFAULT_SAV_CATS = ['Fondo de emergencias','Fondos mutuos','Cuenta de ahorro','Alcancía','Inversión','Viaje'];
 
   let state = {
     movements:    [],
     fixedExpenses:[],
     incomeItems:  [],   // [{id, label, amount}]
-    savings:      [],   // [{id, item, amount, date}]
-    income:       0,    // ingreso manual (si no hay incomeItems)
+    savings:      [],   // [{id, item, amount, date, savCat}]
+    income:       0,
     tab:          'home',
     showAmounts:  true,
     currentMonth: null,
     suggestions:  null,
+    savingsCats:  null, // categorías de ahorro personalizables
     username:     ''
   };
 
@@ -606,6 +598,7 @@ const App = (() => {
       state.income        = d.income        || 0;
       state.showAmounts   = d.showAmounts   !== false;
       state.suggestions   = d.suggestions   || DEFAULT_SUGGESTIONS.slice();
+      state.savingsCats   = d.savingsCats   || DEFAULT_SAV_CATS.slice();
       state.username      = d.username      || '';
     } catch {}
   }
@@ -614,7 +607,7 @@ const App = (() => {
       movements: state.movements, fixedExpenses: state.fixedExpenses,
       incomeItems: state.incomeItems, savings: state.savings,
       income: state.income, showAmounts: state.showAmounts,
-      suggestions: state.suggestions, username: state.username
+      suggestions: state.suggestions, savingsCats: state.savingsCats, username: state.username
     }));
   }
 
@@ -696,8 +689,8 @@ const App = (() => {
     state.fixedExpenses = state.fixedExpenses.filter(f=>f.id!==id);
     save(); render(); toast('Gasto fijo eliminado');
   }
-  function addSaving(item, amount) {
-    state.savings.unshift({ id:'s'+Date.now(), item:item.trim(), amount:Number(amount), date:new Date().toISOString() });
+  function addSaving(item, amount, savCat) {
+    state.savings.unshift({ id:'s'+Date.now(), item:item.trim(), amount:Number(amount), date:new Date().toISOString(), savCat:savCat||'' });
     save(); render();
   }
   function deleteSaving(id) {
@@ -733,10 +726,11 @@ const App = (() => {
     addIncomeItem(lbl, amt); toast(`${lbl} agregado`);
   }
   function addSavingUI() {
-    const item = (document.getElementById('input-saving-item')||{}).value || '';
-    const amt  = parseFloat((document.getElementById('input-saving-amt')||{}).value);
+    const item   = (document.getElementById('input-saving-item')||{}).value || '';
+    const amt    = parseFloat((document.getElementById('input-saving-amt')||{}).value);
+    const savCat = (document.getElementById('input-saving-cat')||{}).value || '';
     if (!item.trim()||!amt||amt<=0) return;
-    addSaving(item, amt);
+    addSaving(item, amt, savCat);
     const si = document.getElementById('input-saving-item'); if(si) si.value='';
     const sa = document.getElementById('input-saving-amt');  if(sa) sa.value='';
     toast(`${item} — ${fmt(amt)}`);
@@ -783,6 +777,21 @@ const App = (() => {
     if(!btn||!col) return;
     btn.classList.toggle('open'); col.classList.toggle('open');
   }
+  function addSuggestionUI() {
+    const el = document.getElementById('input-new-suggestion');
+    if(!el) return;
+    const val = el.value.trim();
+    if(!val) return;
+    if(state.suggestions.includes(val)){ toast('Ya existe esa sugerencia'); return; }
+    state.suggestions.push(val); save();
+    el.value = '';
+    // repintar el área de chips + lista
+    const wrap = document.getElementById('chips-collapse')?.querySelector('.chips-wrap');
+    if(wrap) wrap.innerHTML = renderChipsInner();
+    const list = document.getElementById('suggestions-list');
+    if(list) list.innerHTML = renderSuggestionsList();
+    toast(`"${val}" agregada`);
+  }
   function deleteSuggestion(idx) {
     state.suggestions.splice(idx,1); save();
     const wrap=document.getElementById('chips-collapse')?.querySelector('.chips-wrap');
@@ -796,6 +805,18 @@ const App = (() => {
   }
 
   // ── Auth settings ─────────────────────────────────────────────────
+  function addSavingsCatUI() {
+    const el = document.getElementById('new-sav-cat');
+    if(!el) return;
+    const val = el.value.trim();
+    if(!val) return;
+    if(state.savingsCats.includes(val)){ toast('Ya existe esa categoría'); return; }
+    state.savingsCats.push(val); save(); el.value=''; render();
+  }
+  function deleteSavingsCat(idx) {
+    state.savingsCats.splice(idx,1); save(); render();
+  }
+
   function resetAuth() {
     if (!confirm('¿Cambiar método de acceso? Deberás configurarlo de nuevo al reabrir la app.')) return;
     Auth.clearAuth();
@@ -821,15 +842,6 @@ const App = (() => {
     else if (state.tab==='savings')   el.innerHTML = renderSavingsTab(mk);
     else if (state.tab==='settings')  el.innerHTML = renderSettings();
 
-    // Header sub
-    const sub = document.getElementById('header-sub');
-    if (sub) {
-      const inc = totalIncome();
-      if (inc) {
-        const rem = inc-gt;
-        sub.textContent = state.showAmounts ? (rem>=0?`Te quedan ${fmt(rem)}`:`Pasado ${fmt(Math.abs(rem))}`) : 'Saldo oculto';
-      } else { sub.textContent='Registro de gastos'; }
-    }
     // Header username
     const hu = document.getElementById('header-username');
     if (hu) hu.textContent = state.username ? `Hola, ${state.username}` : '';
@@ -933,18 +945,40 @@ const App = (() => {
   function renderSavings(mk) {
     const savs  = state.savings.filter(s=>s.date.startsWith(mk));
     const total = savingsTotal(mk);
-    const list  = savs.length
-      ? savs.map(s=>`<div class="savings-item"><span class="savings-item-name">${esc(s.item)}</span><span class="savings-item-amt">${disp(s.amount)}</span><button class="btn-savings-del" onclick="App.deleteSaving('${s.id}')">×</button></div>`).join('')
+    const cats  = state.savingsCats || DEFAULT_SAV_CATS;
+    const catOpts = `<option value="">Sin categoría</option>`
+      + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    const list = savs.length
+      ? savs.map(s=>`<div class="savings-item">
+          <div style="flex:1;min-width:0">
+            <div class="savings-item-name">${esc(s.item)}</div>
+            ${s.savCat?`<span style="font-size:.65rem;opacity:.7">${esc(s.savCat)}</span>`:''}
+          </div>
+          <span class="savings-item-amt">${disp(s.amount)}</span>
+          <button class="btn-savings-del" onclick="App.deleteSaving('${s.id}')">×</button>
+        </div>`).join('')
       : `<p class="savings-empty">Sin ahorros este mes. Empieza a guardar 💪</p>`;
     return `<div class="savings-card">
       <div class="savings-header"><span class="savings-title">💰 Ahorros del mes</span><span class="savings-total">${disp(total)}</span></div>
-      <form class="savings-inputs" id="savings-form" onsubmit="event.preventDefault();App.addSavingUI()">
-        <input type="text"   id="input-saving-item" placeholder="Ej: Fondo emergencias" maxlength="50" autocorrect="off"/>
-        <input type="number" id="input-saving-amt"  placeholder="Monto" min="1" inputmode="numeric"/>
-        <button type="submit" class="btn-savings-add">+</button>
+      <form id="savings-form" onsubmit="event.preventDefault();App.addSavingUI()" style="display:flex;flex-direction:column;gap:8px">
+        <div class="savings-inputs">
+          <input type="text"   id="input-saving-item" placeholder="Ej: Fondo emergencias" maxlength="50" autocorrect="off"/>
+          <input type="number" id="input-saving-amt"  placeholder="Monto" min="1" inputmode="numeric"/>
+          <button type="submit" class="btn-savings-add">+</button>
+        </div>
+        <select id="input-saving-cat" style="border:1.5px solid rgba(255,255,255,.25);border-radius:var(--radius-sm);padding:9px 11px;font-size:.85rem;color:#fff;background:rgba(255,255,255,.12) url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\") no-repeat right 10px center;outline:none;-webkit-appearance:none;font-family:inherit;width:100%">${catOpts}</select>
       </form>
       ${list}
     </div>`;
+  }
+
+  function renderSuggestionsList() {
+    return (state.suggestions||[]).map((s,i)=>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:.88rem">${esc(s)}</span>
+        <button class="btn-delete" onclick="App.deleteSuggestion(${i})" style="color:#cbd5e1">×</button>
+      </div>`
+    ).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:8px 0">Sin sugerencias</p>`;
   }
 
   function renderSavingsTab(mk) {
@@ -1002,6 +1036,13 @@ const App = (() => {
           <span>Sugerencias rápidas</span><span class="toggle-arrow">▼</span>
         </button>
         <div class="chips-collapse" id="chips-collapse"><div class="chips-wrap">${chips}</div></div>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <input type="text" id="input-new-suggestion" placeholder="Nueva sugerencia..." maxlength="30" autocorrect="off" spellcheck="false" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:.88rem;color:var(--text);background:var(--bg);outline:none;font-family:inherit"/>
+          <button type="button" style="padding:9px 14px;background:var(--fixed);color:#fff;border:none;border-radius:var(--radius-sm);font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-tap-highlight-color:transparent" onclick="App.addSuggestionUI()">+ Agregar</button>
+        </div>
+        <div id="suggestions-list" style="max-height:160px;overflow-y:auto">${renderSuggestionsList()}</div>
       </div>
       <div><label for="input-fixed-item">Item</label>
         <input type="text" id="input-fixed-item" placeholder="Ej: Arriendo, Crédito..." maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
@@ -1124,13 +1165,37 @@ const App = (() => {
     </div>
 
     <div class="settings-section">
+      <p class="settings-section-lbl">Categorías de ahorro</p>
+      <div class="settings-card">
+        ${(state.savingsCats||[]).map((c,i)=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:.88rem">${esc(c)}</span>
+            <button class="btn-delete" onclick="App.deleteSavingsCat(${i})">×</button>
+          </div>`).join('')}
+        <div class="settings-field-row" style="margin-top:6px">
+          <input type="text" id="new-sav-cat" placeholder="Ej: Fondo casa" maxlength="30"/>
+          <button class="btn-settings-save" onclick="App.addSavingsCatUI()">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <p class="settings-section-lbl">Acerca de</p>
       <div class="settings-card">
         <div class="settings-row"><span class="settings-row-label">Versión</span><span class="settings-row-val">v${APP_VERSION}</span></div>
         <div class="settings-row"><span class="settings-row-label">Plataforma</span><span class="settings-row-val">PWA</span></div>
         <div class="settings-row"><span class="settings-row-label">Desarrollado por</span><span class="settings-row-val">Cristian Silva</span></div>
       </div>
-    </div>`;
+    </div>
+
+    ${window._swWaiting ? `
+    <div class="settings-section">
+      <div class="update-notice">
+        <span class="update-notice-txt">🎉 Hay una actualización disponible</span>
+        <button class="btn-update-inline" onclick="App.doUpdate()">Actualizar ahora</button>
+      </div>
+    </div>` : ''}
+    `;
   }
 
   // ── Bind forms ────────────────────────────────────────────────────
@@ -1184,11 +1249,22 @@ const App = (() => {
     if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 
+  function doUpdate() {
+    if(!window._swWaiting) return;
+    window._swWaiting.postMessage({ type:'SKIP_WAITING' });
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>location.reload());
+  }
+  function refreshIfSettings() {
+    if(state.tab==='settings') render();
+  }
+
   return {
     init, setTab, openSettings, closeSettings, saveSettings,
     deleteMovement, deleteFixed, fillFixedItem, toggleSuggestions, deleteSuggestion,
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
-    saveSettingsInline, saveUsername, resetAuth, goMonth
+    saveSettingsInline, saveUsername, resetAuth, goMonth,
+    doUpdate, refreshIfSettings,
+    addSuggestionUI, addSavingsCatUI, deleteSavingsCat
   };
 })();
 
@@ -1338,28 +1414,24 @@ const App = (() => {
 })();
 
 // ══ SERVICE WORKER — DETECCIÓN DE ACTUALIZACIÓN ═══════════════════════
+window._swWaiting = null;
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistration().then(reg=>{
     if(!reg) return;
-    // Si ya hay un SW esperando
-    if(reg.waiting) showUpdateBanner(reg.waiting);
+    if(reg.waiting) _markUpdate(reg.waiting);
     reg.addEventListener('updatefound', ()=>{
       const newSW = reg.installing;
       newSW.addEventListener('statechange', ()=>{
-        if(newSW.state==='installed' && navigator.serviceWorker.controller) {
-          showUpdateBanner(newSW);
-        }
+        if(newSW.state==='installed' && navigator.serviceWorker.controller) _markUpdate(newSW);
       });
     });
   });
 
-  function showUpdateBanner(swWaiting) {
-    const banner = document.getElementById('update-banner');
-    banner.classList.remove('hidden');
-    document.getElementById('btn-do-update').addEventListener('click', ()=>{
-      swWaiting.postMessage({ type:'SKIP_WAITING' });
-      navigator.serviceWorker.addEventListener('controllerchange', ()=> location.reload());
-    });
+  function _markUpdate(sw) {
+    window._swWaiting = sw;
+    // Re-renderizar ajustes si la pestaña está activa
+    try { if(App && typeof App.refreshIfSettings==='function') App.refreshIfSettings(); } catch {}
   }
 }
 </script>
