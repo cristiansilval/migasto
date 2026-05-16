@@ -1,4 +1,4 @@
-const CACHE = 'migasto-v3';
+const CACHE = 'migasto-v4';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -15,10 +15,14 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Para el botón "Actualizar" de la app
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
 
-  // Para index.html: red primero, caché como respaldo (siempre muestra la versión nueva)
   if (e.request.url.endsWith('/') || e.request.url.includes('index.html')) {
     e.respondWith(
       fetch(e.request)
@@ -32,7 +36,6 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Para el resto: caché primero, red como respaldo
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();
