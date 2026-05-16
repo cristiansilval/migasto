@@ -8,7 +8,7 @@ echo   PUBLICAR MIGASTO
 echo ================================
 echo.
 
-cd /d "C:\Users\ASUS\Mi unidad\proyecto-mm"
+cd /d "C:\Users\ASUS\Mi unidad\proyecto-mm\Gastos"
 
 :: Pedir descripcion del cambio
 set /p MENSAJE="Que cambiaste? (Enter para continuar): "
