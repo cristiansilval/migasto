@@ -260,6 +260,8 @@
     .nav-btn.active          .nav-icon-wrap { background: var(--brand-light); }
     .nav-btn.active-fixed    { color: var(--fixed); }
     .nav-btn.active-fixed    .nav-icon-wrap { background: var(--fixed-light); }
+    .nav-btn.active-savings  { color: #10b981; }
+    .nav-btn.active-savings  .nav-icon-wrap { background: #d1fae5; }
     .nav-btn.active-settings { color: #0ea5e9; }
     .nav-btn.active-settings .nav-icon-wrap { background: #e0f2fe; }
 
@@ -458,6 +460,10 @@
       <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
       Historial
     </button>
+    <button class="nav-btn" id="nav-savings" onclick="App.setTab('savings')">
+      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c0-1.1-.9-2-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M16 11a1 1 0 11-2 0 1 1 0 012 0z"/><path d="M12 7v2"/><path d="M7 7H5a2 2 0 00-2 2v6a2 2 0 002 2h2"/></svg></span>
+      Ahorro
+    </button>
     <button class="nav-btn" id="nav-settings" onclick="App.setTab('settings')">
       <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
       Ajustes
@@ -634,7 +640,7 @@ const App = (() => {
   function dailyTotal(mk)   { return state.movements.filter(m=>m.date.startsWith(mk||activeMk())).reduce((s,m)=>s+m.amount,0); }
   function fixedTotal()     { return state.fixedExpenses.reduce((s,f)=>s+f.amount,0); }
   function grandTotal(mk)   { return dailyTotal(mk)+fixedTotal(); }
-  function savingsTotal(mk) { return state.savings.filter(s=>!mk||s.date.startsWith(mk)).reduce((s,v)=>s+v.amount,0); }
+  function savingsTotal(mk)  { return state.savings.filter(s=>!mk||s.date.startsWith(mk)).reduce((s,v)=>s+v.amount,0); }
   function getPct(mk)       { const inc=totalIncome(); return inc ? Math.min((grandTotal(mk)/inc)*100,100) : null; }
   function daysLeft(mk) {
     const [y,m] = mk.split('-').map(Number);
@@ -748,6 +754,7 @@ const App = (() => {
     document.getElementById('nav-home').className      = 'nav-btn'+(tab==='home'      ?' active':'');
     document.getElementById('nav-fixed').className     = 'nav-btn'+(tab==='fixed'     ?' active-fixed':'');
     document.getElementById('nav-movements').className = 'nav-btn'+(tab==='movements' ?' active':'');
+    document.getElementById('nav-savings').className   = 'nav-btn'+(tab==='savings'   ?' active-savings':'');
     document.getElementById('nav-settings').className  = 'nav-btn'+(tab==='settings'  ?' active-settings':'');
     render();
   }
@@ -811,6 +818,7 @@ const App = (() => {
     if      (state.tab==='home')      el.innerHTML = renderHome(gt,dt,ft,pct,mk);
     else if (state.tab==='fixed')     el.innerHTML = renderFixed();
     else if (state.tab==='movements') el.innerHTML = renderMovements(mk,dt);
+    else if (state.tab==='savings')   el.innerHTML = renderSavingsTab(mk);
     else if (state.tab==='settings')  el.innerHTML = renderSettings();
 
     // Header sub
@@ -836,7 +844,6 @@ const App = (() => {
   function renderHome(gt,dt,ft,pct,mk) {
     return renderBalanceCard(gt,dt,ft,pct,mk)
       + renderAlert(pct)
-      + renderSavings(mk)
       + renderDailyForm()
       + renderCategoryKPI(mk)
       + `<p class="app-version">MiGasto v${APP_VERSION}</p>`;
@@ -938,6 +945,26 @@ const App = (() => {
       </form>
       ${list}
     </div>`;
+  }
+
+  function renderSavingsTab(mk) {
+    const todayK  = todayMk();
+    const hasNext = mk < todayK;
+    const allTime = savingsTotal();  // sin filtro de mes = total histórico
+
+    const nav = `<div class="month-nav">
+      <button class="month-nav-btn" onclick="App.goMonth(-1)">‹</button>
+      <span class="month-nav-label">${fmtMonthLabel(mk)}</span>
+      <button class="month-nav-btn" onclick="App.goMonth(1)" ${!hasNext?'disabled':''}>›</button>
+    </div>`;
+
+    // Total histórico
+    const totalCard = `<div class="balance-card" style="text-align:center">
+      <p class="balance-label">Total ahorrado (histórico)</p>
+      <p class="balance-amount" style="justify-content:center;display:flex">${dispHtml(allTime)}</p>
+    </div>`;
+
+    return nav + totalCard + renderSavings(mk);
   }
 
   // ── Gastos Fijos ──────────────────────────────────────────────────
