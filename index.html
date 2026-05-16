@@ -141,6 +141,12 @@
     #btn-save-fixed.saved  { background: var(--success); }
 
     /* ── Chips ── */
+    .chips-toggle { display: flex; align-items: center; gap: 6px; background: var(--fixed-light); color: var(--fixed); border: 1.5px solid #ddd6fe; border-radius: 99px; padding: 7px 14px; font-size: .85rem; font-weight: 700; cursor: pointer; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; width: 100%; justify-content: space-between; }
+    .chips-toggle:active { transform: scale(.98); background: #ddd6fe; }
+    .chips-toggle .toggle-arrow { font-size: .75rem; transition: transform .2s; }
+    .chips-toggle.open .toggle-arrow { transform: rotate(180deg); }
+    .chips-collapse { overflow: hidden; max-height: 0; transition: max-height .25s ease, padding .25s ease; padding-top: 0; }
+    .chips-collapse.open { max-height: 200px; padding-top: 8px; }
     .chips-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
     .chip { padding: 6px 12px; background: var(--fixed-light); color: var(--fixed); border: 1.5px solid #ddd6fe; border-radius: 99px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
     .chip:active { transform: scale(.95); background: #ddd6fe; }
@@ -600,7 +606,14 @@ const App = (() => {
 
     return `<form class="form-card fixed-form" id="fixed-form" autocomplete="off">
       <div class="form-title">Agregar gasto fijo</div>
-      <div><label>Sugerencias rápidas</label><div class="chips-wrap">${chips}</div></div>
+      <div>
+        <button type="button" class="chips-toggle" id="chips-toggle-btn" onclick="App.toggleSuggestions()">
+          <span>Sugerencias rápidas</span><span class="toggle-arrow">▼</span>
+        </button>
+        <div class="chips-collapse" id="chips-collapse">
+          <div class="chips-wrap">${chips}</div>
+        </div>
+      </div>
       <div><label for="input-fixed-item">Item</label>
         <input type="text" id="input-fixed-item" placeholder="Ej: Arriendo, Crédito..."
           maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
@@ -692,7 +705,15 @@ const App = (() => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 
-  return { init, setTab, openSettings, closeSettings, saveSettings, deleteMovement, deleteFixed, fillFixedItem, clearAll, goMonth };
+  function toggleSuggestions() {
+    const btn = document.getElementById('chips-toggle-btn');
+    const col = document.getElementById('chips-collapse');
+    if (!btn || !col) return;
+    btn.classList.toggle('open');
+    col.classList.toggle('open');
+  }
+
+  return { init, setTab, openSettings, closeSettings, saveSettings, deleteMovement, deleteFixed, fillFixedItem, toggleSuggestions, clearAll, goMonth };
 })();
 
 // ══ PANTALLA DE BLOQUEO ══════════════════════════════════════════════

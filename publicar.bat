@@ -17,7 +17,7 @@ if "%MENSAJE%"=="" set MENSAJE=actualizacion
 :: Actualizar version del cache en sw.js para forzar actualizacion en celulares
 for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set dt=%%I
 set VERSION=%dt:~0,12%
-powershell -Command "(Get-Content sw.js) -replace \"const CACHE = 'migasto-v\d+';\", \"const CACHE = 'migasto-v%VERSION%';\" | Set-Content sw.js"
+powershell -Command "$content = Get-Content 'sw.js' -Raw; $content = $content -replace \"const CACHE = 'migasto-v[^']*';\", \"const CACHE = 'migasto-v%VERSION%';\"; Set-Content 'sw.js' $content -NoNewline"
 echo Cache version actualizada: migasto-v%VERSION%
 
 :: Git
