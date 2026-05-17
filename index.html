@@ -34,6 +34,27 @@
       --radius-sm:    10px;
     }
 
+    /* ── DARK MODE ──────────────────────────────────────────────────── */
+    body.dark {
+      --brand:        #818cf8;
+      --brand-dark:   #6366f1;
+      --brand-light:  #1e1b4b;
+      --fixed:        #a78bfa;
+      --fixed-light:  #2d1f63;
+      --success:      #34d399;
+      --warn:         #fbbf24;
+      --warn-bg:      #1c1a10;
+      --warn-border:  #78620a;
+      --danger:       #f87171;
+      --danger-bg:    #1f1010;
+      --danger-border:#7f1d1d;
+      --text:         #f1f5f9;
+      --text-2:       #94a3b8;
+      --bg:           #0f172a;
+      --card:         #1e293b;
+      --border:       #334155;
+    }
+
     html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 
     /* ═══ LOCK SCREEN ═══════════════════════════════════════════════ */
@@ -94,6 +115,7 @@
     .header-right    { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .btn-eye-header  { background: rgba(255,255,255,.2); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background .15s; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
     .btn-eye-header:active { background: rgba(255,255,255,.35); }
+    .btn-eye-header.active-settings { background: rgba(255,255,255,.38); box-shadow: 0 0 0 2px rgba(255,255,255,.5); }
 
     /* ── Main ── */
     main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 12px; }
@@ -173,6 +195,13 @@
     .fixed-form .cat-select:focus { border-color: var(--fixed); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
     .cat-badge { display: inline-block; font-size: .62rem; font-weight: 700; padding: 2px 7px; border-radius: 99px; margin-top: 2px; letter-spacing: .04em; text-transform: uppercase; }
 
+    /* ── Currency toggle ── */
+    .currency-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; width: fit-content; }
+    .currency-btn { padding: 7px 16px; border: none; background: var(--bg); color: var(--text-2); font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; -webkit-tap-highlight-color: transparent; }
+    .currency-btn.active { background: var(--fixed); color: #fff; }
+    .currency-btn:active { opacity: .85; }
+    .uf-info { background: var(--fixed-light); border: 1.5px solid #ddd6fe; border-radius: var(--radius-sm); padding: 8px 12px; font-size: .78rem; color: #5b21b6; display: flex; justify-content: space-between; align-items: center; }
+
     /* ── KPI Card ── */
     .kpi-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
     .kpi-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-2); margin-bottom: 12px; font-weight: 700; }
@@ -251,18 +280,25 @@
     .total-bar.fixed-total span, .total-bar.fixed-total strong { color: var(--fixed); }
 
     /* ── Nav ── */
-    nav { display: flex; background: var(--card); border-top: 1.5px solid var(--border); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -4px 18px rgba(0,0,0,.07); position: sticky; bottom: 0; z-index: 50; }
-    .nav-btn { flex: 1; border: none; background: none; padding: 7px 3px 9px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94a3b8; font-size: .6rem; font-weight: 700; transition: color .15s; -webkit-tap-highlight-color: transparent; letter-spacing: .02em; }
+    nav { display: flex; justify-content: space-around; background: var(--card); border-top: 1.5px solid var(--border); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -4px 18px rgba(0,0,0,.07); position: sticky; bottom: 0; z-index: 50; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    nav::-webkit-scrollbar { display: none; }
+    .nav-btn { flex: 1; min-width: 0; border: none; background: none; padding: 6px 4px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; color: #94a3b8; font-size: .55rem; font-weight: 700; transition: color .15s; -webkit-tap-highlight-color: transparent; letter-spacing: .02em; }
     .nav-btn:active .nav-icon-wrap { transform: scale(.88); }
-    .nav-icon-wrap { width: 44px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 14px; transition: background .2s, transform .15s; }
-    .nav-btn.active          { color: var(--brand); }
-    .nav-btn.active          .nav-icon-wrap { background: var(--brand-light); }
-    .nav-btn.active-fixed    { color: var(--fixed); }
-    .nav-btn.active-fixed    .nav-icon-wrap { background: var(--fixed-light); }
-    .nav-btn.active-savings  { color: #10b981; }
-    .nav-btn.active-savings  .nav-icon-wrap { background: #d1fae5; }
-    .nav-btn.active-settings { color: #0ea5e9; }
-    .nav-btn.active-settings .nav-icon-wrap { background: #e0f2fe; }
+    .nav-icon-wrap { width: 38px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 13px; transition: background .2s, transform .15s; }
+    .nav-btn.active           { color: var(--brand); }
+    .nav-btn.active           .nav-icon-wrap { background: var(--brand-light); }
+    .nav-btn.active-daily     { color: #0284c7; }
+    .nav-btn.active-daily     .nav-icon-wrap { background: #e0f2fe; }
+    .nav-btn.active-fixed     { color: var(--fixed); }
+    .nav-btn.active-fixed     .nav-icon-wrap { background: var(--fixed-light); }
+    .nav-btn.active-hist      { color: #64748b; }
+    .nav-btn.active-hist      .nav-icon-wrap { background: #f1f5f9; }
+    .nav-btn.active-savings   { color: #10b981; }
+    .nav-btn.active-savings   .nav-icon-wrap { background: #d1fae5; }
+    .nav-btn.active-projects  { color: #f59e0b; }
+    .nav-btn.active-projects  .nav-icon-wrap { background: #fef3c7; }
+    .nav-btn.active-settings  { color: #0ea5e9; }
+    .nav-btn.active-settings  .nav-icon-wrap { background: #e0f2fe; }
 
     /* ── Modal ── */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: flex-end; z-index: 200; animation: fadeIn .2s ease; }
@@ -344,16 +380,15 @@
 <!-- ═══ LOCK SCREEN ═══════════════════════════════════════════════════ -->
 <div id="lock-screen" class="hidden">
 
-  <!-- Setup: primera vez — elegir método -->
+  <!-- Setup: primera vez — solo biometría -->
   <div id="lock-setup" class="hidden">
     <p class="lock-app-name">MiGasto</p>
-    <p class="lock-subtitle">Tu registro de gastos personal</p>
+    <p class="lock-subtitle">Protege tu información personal</p>
     <div class="lock-setup-card">
-      <h2>Protege tu acceso</h2>
-      <p>Elige cómo quieres entrar a la app.</p>
-      <button class="btn-lock-primary"   id="btn-setup-bio">Usar huella / Face ID</button>
-      <button class="btn-lock-secondary" id="btn-setup-pin">Crear PIN de 4 dígitos</button>
-      <button class="btn-lock-ghost"     id="btn-skip-bio">Omitir por ahora</button>
+      <h2>Activa tu huella o Face ID</h2>
+      <p>MiGasto requiere verificación biométrica para proteger tus datos.</p>
+      <button class="btn-lock-primary" id="btn-setup-bio">Activar Huella / Face ID</button>
+      <p class="lock-hint" id="setup-bio-msg" style="margin-top:14px;min-height:18px"></p>
     </div>
   </div>
 
@@ -397,7 +432,6 @@
       </svg>
     </button>
     <p class="lock-hint">Toca para desbloquear</p>
-    <button class="lock-skip" id="btn-skip-auth">Omitir</button>
   </div>
 
   <!-- Auth: PIN -->
@@ -425,7 +459,6 @@
       <button class="pin-key pin-del" id="auth-pin-del">⌫</button>
     </div>
     <p class="pin-msg" id="auth-pin-msg"></p>
-    <button class="lock-skip" id="btn-skip-pin-auth">Omitir</button>
   </div>
 
 </div>
@@ -439,6 +472,9 @@
     </div>
     <div class="header-right">
       <button class="btn-eye-header" id="btn-eye" title="Mostrar/ocultar montos"></button>
+      <button class="btn-eye-header" id="btn-settings-header" onclick="App.setTab('settings')" title="Ajustes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -447,24 +483,28 @@
 
   <nav>
     <button class="nav-btn active" id="nav-home" onclick="App.setTab('home')">
-      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
       Inicio
     </button>
+    <button class="nav-btn" id="nav-daily" onclick="App.setTab('daily')">
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+      Gastos
+    </button>
     <button class="nav-btn" id="nav-fixed" onclick="App.setTab('fixed')">
-      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="13" y2="18"/></svg></span>
-      Gastos fijos
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      Fijos
     </button>
     <button class="nav-btn" id="nav-movements" onclick="App.setTab('movements')">
-      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
       Historial
     </button>
     <button class="nav-btn" id="nav-savings" onclick="App.setTab('savings')">
-      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c0-1.1-.9-2-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M16 11a1 1 0 11-2 0 1 1 0 012 0z"/><path d="M12 7v2"/><path d="M7 7H5a2 2 0 00-2 2v6a2 2 0 002 2h2"/></svg></span>
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg></span>
       Ahorro
     </button>
-    <button class="nav-btn" id="nav-settings" onclick="App.setTab('settings')">
-      <span class="nav-icon-wrap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
-      Ajustes
+    <button class="nav-btn" id="nav-projects" onclick="App.setTab('projects')">
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      Proyectos
     </button>
   </nav>
 </div>
@@ -484,7 +524,7 @@
 </div>
 
 <script>
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.7';
 
 // ══ CATEGORÍAS ═══════════════════════════════════════════════════════
 const CATS = {
@@ -583,7 +623,22 @@ const App = (() => {
   const DEFAULT_MOV_CATS   = ['Comida/Casa','Gastos médicos','Entretenimiento','Hogar','Regalos'];
   const DEFAULT_FIXED_CATS = ['Comida/Casa','Gastos médicos','Entretenimiento','Hogar','Regalos'];
 
-  let _openSections = new Set(); // collapsible section state (not persisted)
+  let _openSections      = new Set(); // collapsible section state (not persisted)
+  let _fixedCurrency     = 'CLP';    // currency selector in fixed form (not persisted)
+  let _editingMovement   = null;     // id del movimiento en edición
+  let _ufCache       = null;     // { rate, date }
+
+  async function fetchUF() {
+    const today = (()=>{ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+    if(_ufCache && _ufCache.date===today) return _ufCache.rate;
+    try {
+      const r = await fetch('https://mindicador.cl/api/uf');
+      const d = await r.json();
+      const rate = d.serie[0].valor;
+      _ufCache = { rate, date: today };
+      return rate;
+    } catch { return null; }
+  }
 
   let state = {
     movements:    [],
@@ -598,7 +653,10 @@ const App = (() => {
     savingsCats:  null, // categorías de ahorro personalizables
     movCats:      null, // categorías gastos del mes
     fixedCats:    null, // categorías gastos fijos
-    username:     ''
+    projects:     [],   // [{id, item, amount, date}]
+    trash:        [],   // movimientos eliminados (soft delete)
+    username:     '',
+    darkMode:     false
   };
 
   // ── Persistencia ──────────────────────────────────────────────────
@@ -615,7 +673,11 @@ const App = (() => {
       state.savingsCats   = d.savingsCats   || DEFAULT_SAV_CATS.slice();
       state.movCats       = d.movCats       || DEFAULT_MOV_CATS.slice();
       state.fixedCats     = d.fixedCats     || DEFAULT_FIXED_CATS.slice();
+      state.projects      = d.projects      || [];
+      state.trash         = d.trash         || [];
       state.username      = d.username      || '';
+      state.darkMode      = d.darkMode      || false;
+      if (state.darkMode) document.body.classList.add('dark');
     } catch {}
   }
   function save() {
@@ -624,7 +686,9 @@ const App = (() => {
       incomeItems: state.incomeItems, savings: state.savings,
       income: state.income, showAmounts: state.showAmounts,
       suggestions: state.suggestions, savingsCats: state.savingsCats,
-      movCats: state.movCats, fixedCats: state.fixedCats, username: state.username
+      movCats: state.movCats, fixedCats: state.fixedCats,
+      projects: state.projects, trash: state.trash, username: state.username,
+      darkMode: state.darkMode
     }));
   }
 
@@ -704,14 +768,124 @@ const App = (() => {
     save(); render();
   }
   function deleteMovement(id) {
-    if (!confirm('¿Eliminar este movimiento?')) return;
+    // Soft delete → va a papelera
+    const m = state.movements.find(m=>m.id===id);
+    if(!m) return;
+    state.trash.push({...m, deletedAt: new Date().toISOString()});
     state.movements = state.movements.filter(m=>m.id!==id);
-    save(); render(); toast('Movimiento eliminado');
+    if(_editingMovement===id) _editingMovement=null;
+    save(); render(); toast('Enviado a desechados');
   }
-  function addFixed(item, amount, category) {
+  function permanentDeleteMovement(id) {
+    if(!confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.')) return;
+    state.trash = state.trash.filter(t=>t.id!==id);
+    save(); render(); toast('Eliminado definitivamente');
+  }
+  function restoreMovement(id) {
+    const t = state.trash.find(t=>t.id===id);
+    if(!t) return;
+    const {deletedAt, ...m} = t;
+    state.movements.push(m);
+    state.trash = state.trash.filter(t=>t.id!==id);
+    save(); render(); toast(`"${m.item}" restaurado`);
+  }
+  function editMovement(id) {
+    _editingMovement = id; render();
+  }
+  function cancelEditMovement() {
+    _editingMovement = null; render();
+  }
+  function saveEditMovement(id) {
+    const nameEl = document.getElementById(`edit-name-${id}`);
+    const amtEl  = document.getElementById(`edit-amt-${id}`);
+    const name = (nameEl?.value||'').trim();
+    const amt  = parseFloat(amtEl?.value);
+    if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
+    const m = state.movements.find(m=>m.id===id);
+    if(m){ m.item=name; m.amount=amt; }
+    _editingMovement=null; save(); render(); toast('Guardado ✓');
+  }
+  function addFixed(item, amount, category, currency, ufAmount, ufRate) {
     if (state.fixedExpenses.find(f=>f.item.toLowerCase()===item.toLowerCase())) { toast(`"${item}" ya está en fijos`); return false; }
-    state.fixedExpenses.push({ id:'f'+Date.now(), item:item.trim(), amount:Number(amount), category:category||'' });
+    const entry = { id:'f'+Date.now(), item:item.trim(), amount:Number(amount), category:category||'' };
+    if (currency==='UF' && ufAmount) { entry.currency='UF'; entry.ufAmount=Number(ufAmount); entry.ufRate=Number(ufRate||0); }
+    state.fixedExpenses.push(entry);
     save(); render(); return true;
+  }
+
+  function addProject(item, amount, date) {
+    state.projects.push({ id:'p'+Date.now(), item:item.trim(), amount:Number(amount), date:date||null });
+    save(); render();
+  }
+  function deleteProject(id) {
+    state.projects = state.projects.filter(p=>p.id!==id);
+    save(); render(); toast('Proyecto eliminado');
+  }
+  function addProjectUI() {
+    const item   = (document.getElementById('proj-item')||{}).value||'';
+    const amount = parseFloat((document.getElementById('proj-amount')||{}).value);
+    const date   = (document.getElementById('proj-date')||{}).value||'';
+    if(!item.trim()||!amount||amount<=0){ toast('Completa nombre y monto'); return; }
+    addProject(item, amount, date ? date.slice(0,7) : null); // guardamos YYYY-MM
+    toast(`${item} agregado`);
+  }
+
+  function renderProyectosDelMes(mk) {
+    const projs = state.projects.filter(p=>p.date===mk);
+    if(!projs.length) return '';
+    const total = projs.reduce((s,p)=>s+p.amount,0);
+    const rows  = projs.map(p=>`<div class="breakdown-row" style="background:#fef3c7">
+      <span class="br-label" style="color:#92400e">⭐ ${esc(p.item)}</span>
+      <span class="br-val" style="color:#92400e">${disp(p.amount)}</span>
+    </div>`).join('');
+    return `<div class="balance-card">
+      <p class="balance-label">Proyectos este mes</p>
+      <div class="balance-breakdown">${rows}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.82rem;color:#92400e;font-weight:700">
+        <span>Total proyectado</span><span>${disp(total)}</span>
+      </div>
+    </div>`;
+  }
+
+  function renderProyectos() {
+    const sorted = [...state.projects].sort((a,b)=>{
+      if(!a.date&&!b.date) return 0;
+      if(!a.date) return 1;
+      if(!b.date) return -1;
+      return a.date.localeCompare(b.date);
+    });
+    const list = sorted.length ? sorted.map(p=>{
+      const label = p.date ? fmtMonthLabel(p.date) : 'Sin fecha';
+      return `<div class="movement-item">
+        <div class="movement-info">
+          <div class="movement-name">${esc(p.item)}</div>
+          <div style="font-size:.72rem;color:var(--text-2);margin-top:2px">${label}</div>
+        </div>
+        <div class="movement-amount" style="color:#f59e0b">${disp(p.amount)}</div>
+        <button class="btn-delete" onclick="App.deleteProject('${p.id}')">×</button>
+      </div>`;
+    }).join('') : `<div class="empty-state"><p>Sin proyectos aún.<br>Agrega gastos futuros planificados.</p></div>`;
+
+    return `<div class="form-card" style="border-top:3px solid #f59e0b">
+      <p style="font-size:.93rem;font-weight:700;color:#f59e0b">Nuevo proyecto</p>
+      <div><label for="proj-item">Nombre del proyecto</label>
+        <input type="text" id="proj-item" placeholder="Ej: Auto, Viaje, Muebles..." maxlength="60" autocorrect="off"/></div>
+      <div><label for="proj-amount">Monto estimado ($)</label>
+        <input type="number" id="proj-amount" placeholder="Ej: 5000000" min="1" inputmode="numeric"/></div>
+      <div><label for="proj-date">Fecha de ejecución (opcional)</label>
+        <input type="month" id="proj-date" style="width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;font-size:.95rem;color:var(--text);background:var(--bg);outline:none;font-family:inherit"/></div>
+      <button type="button" style="width:100%;padding:13px;background:#f59e0b;color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit" onclick="App.addProjectUI()">+ Agregar proyecto</button>
+    </div>
+    ${sorted.length?`<p class="section-title">Proyectos guardados</p>`:''}
+    ${list}`;
+  }
+
+  function setFixedCurrency(cur) {
+    _fixedCurrency = cur;
+    if (cur==='UF') {
+      fetchUF().then(rate=>{ if(rate) render(); else toast('Sin conexión para obtener UF'); });
+    }
+    render();
   }
   function deleteFixed(id) {
     if (!confirm('¿Eliminar este gasto fijo?')) return;
@@ -736,7 +910,13 @@ const App = (() => {
   }
   function setIncome(v)     { state.income=Number(v); save(); render(); }
   function toggleAmounts()  { state.showAmounts=!state.showAmounts; save(); render(); }
+  function toggleDark()     { state.darkMode=!state.darkMode; document.body.classList.toggle('dark', state.darkMode); save(); render(); }
   function goMonth(d)       { state.currentMonth=shiftMonth(activeMk(),d); render(); }
+  function jumpToMonth()    {
+    const y=(document.getElementById('hist-year')||{}).value;
+    const m=(document.getElementById('hist-month')||{}).value;
+    if(y&&m){ state.currentMonth=`${y}-${m}`; render(); }
+  }
 
   function saveUsername() {
     const v = (document.getElementById('settings-username')||{}).value || '';
@@ -775,10 +955,12 @@ const App = (() => {
   function setTab(tab) {
     state.tab=tab;
     document.getElementById('nav-home').className      = 'nav-btn'+(tab==='home'      ?' active':'');
+    document.getElementById('nav-daily').className     = 'nav-btn'+(tab==='daily'     ?' active-daily':'');
     document.getElementById('nav-fixed').className     = 'nav-btn'+(tab==='fixed'     ?' active-fixed':'');
-    document.getElementById('nav-movements').className = 'nav-btn'+(tab==='movements' ?' active':'');
+    document.getElementById('nav-movements').className = 'nav-btn'+(tab==='movements' ?' active-hist':'');
     document.getElementById('nav-savings').className   = 'nav-btn'+(tab==='savings'   ?' active-savings':'');
-    document.getElementById('nav-settings').className  = 'nav-btn'+(tab==='settings'  ?' active-settings':'');
+    document.getElementById('nav-projects').className  = 'nav-btn'+(tab==='projects'  ?' active-projects':'');
+    document.getElementById('btn-settings-header').className = 'btn-eye-header'+(tab==='settings' ?' active-settings':'');
     render();
   }
 
@@ -843,7 +1025,9 @@ const App = (() => {
   function toggleSection(id) {
     if(_openSections.has(id)) _openSections.delete(id); else _openSections.add(id);
     const el = document.getElementById('main-content');
-    if(el && state.tab==='settings') { el.innerHTML = renderSettings(); bindForms(); }
+    if(!el) return;
+    if(state.tab==='settings') { el.innerHTML = renderSettings(); bindForms(); }
+    else if(state.tab==='movements') { el.innerHTML = renderHistorial(); }
   }
   function addMovCatUI() {
     const el = document.getElementById('new-mov-cat'); if(!el) return;
@@ -880,9 +1064,11 @@ const App = (() => {
     const el  = document.getElementById('main-content');
 
     if      (state.tab==='home')      el.innerHTML = renderHome(gt,dt,ft,pct,mk);
+    else if (state.tab==='daily')     el.innerHTML = renderDailyTab(mk,dt);
     else if (state.tab==='fixed')     el.innerHTML = renderFixed();
-    else if (state.tab==='movements') el.innerHTML = renderMovements(mk,dt);
+    else if (state.tab==='movements') el.innerHTML = renderHistorial();
     else if (state.tab==='savings')   el.innerHTML = renderSavingsTab(mk);
+    else if (state.tab==='projects')  el.innerHTML = renderProyectos();
     else if (state.tab==='settings')  el.innerHTML = renderSettings();
 
     // Header username
@@ -899,9 +1085,41 @@ const App = (() => {
   function renderHome(gt,dt,ft,pct,mk) {
     return renderBalanceCard(gt,dt,ft,pct,mk)
       + renderAlert(pct)
-      + renderDailyForm()
       + renderCategoryKPI(mk)
+      + renderProyectosDelMes(mk)
       + `<p class="app-version">MiGasto v${APP_VERSION}</p>`;
+  }
+
+  // Pestaña Gastos Mensuales
+  function renderDailyTab(mk, dt) {
+    return renderDailyForm() + renderDailyList(mk, dt);
+  }
+
+  function renderDailyList(mk, dt) {
+    const movs = state.movements.filter(m=>m.date.startsWith(mk));
+    if(!movs.length) return `<div class="empty-state"><p>Sin gastos este mes.<br>Agrega tu primer gasto arriba.</p></div>`;
+    const groups={};
+    movs.forEach(m=>{ const k=fmtGroup(m.date); if(!groups[k]) groups[k]=[]; groups[k].push(m); });
+    let html='';
+    for(const [date,items] of Object.entries(groups)){
+      html+=`<p class="section-title">${date}</p>`;
+      items.forEach(m=>{
+        const c=catStyle(m.category);
+        html+=`<div class="movement-item">
+          <div class="movement-info">
+            <div class="movement-name">${esc(m.item)}</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
+              <span style="font-size:.7rem;color:var(--text-2)">${fmtTime(m.date)}</span>
+              <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
+            </div>
+          </div>
+          <div class="movement-amount">${disp(m.amount)}</div>
+          <button class="btn-delete" onclick="App.deleteMovement('${m.id}')">×</button>
+        </div>`;
+      });
+    }
+    html+=`<div class="total-bar"><span>Total del mes</span><strong>${disp(dt)}</strong></div>`;
+    return html;
   }
 
   function renderBalanceCard(gt,dt,ft,pct,mk) {
@@ -971,9 +1189,10 @@ const App = (() => {
 
   function renderCategoryKPI(mk) {
     const movs = state.movements.filter(m=>m.date.startsWith(mk));
-    if(!movs.length) return '';
     const cats = {};
     movs.forEach(m=>{ const c=m.category||''; cats[c]=(cats[c]||0)+m.amount; });
+    state.fixedExpenses.forEach(f=>{ const c=f.category||''; cats[c]=(cats[c]||0)+f.amount; });
+    if(!Object.keys(cats).length) return '';
     const total = Object.values(cats).reduce((s,v)=>s+v,0);
     const rows  = Object.entries(cats).sort(([,a],[,b])=>b-a).map(([cat,amt])=>{
       const pct = total ? (amt/total*100) : 0;
@@ -1048,23 +1267,32 @@ const App = (() => {
 
   // ── Gastos Fijos ──────────────────────────────────────────────────
   function renderFixed() {
-    const ft       = fixedTotal();
+    const ft        = fixedTotal();
     const fixedCats = state.fixedCats || DEFAULT_FIXED_CATS;
-    const catOpts  = `<option value="">Sin categoría</option>`
+    const catOpts   = `<option value="">Sin categoría</option>`
       + fixedCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-    const chips = renderChipsInner();
+    const isUF      = _fixedCurrency === 'UF';
+    const ufInfo    = isUF && _ufCache
+      ? `<div class="uf-info"><span>UF hoy (${_ufCache.date})</span><strong>$${Math.round(_ufCache.rate).toLocaleString('es-CL')}</strong></div>`
+      : (isUF ? `<div class="uf-info"><span>Cargando valor UF...</span></div>` : '');
 
     let list = state.fixedExpenses.length ? '' : `<div class="empty-state"><p>Sin gastos fijos aún.<br>Agrega arriendo, crédito u otros pagos mensuales.</p></div>`;
     if (state.fixedExpenses.length) {
       list += `<p class="section-title">Gastos configurados</p>`;
       state.fixedExpenses.forEach(f=>{
-        const c = catStyle(f.category);
+        const c    = catStyle(f.category);
+        const isUFEntry = f.currency==='UF' && f.ufAmount;
+        const disp_amt = isUFEntry ? `${f.ufAmount} UF` : disp(f.amount);
+        const clp_sub  = isUFEntry ? `<div style="font-size:.65rem;color:var(--text-2);text-align:right;margin-top:1px">${disp(f.amount)}</div>` : '';
         list += `<div class="movement-item">
           <div class="movement-info">
             <div class="movement-name">${esc(f.item)}</div>
             <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
           </div>
-          <div class="movement-amount">${disp(f.amount)}</div>
+          <div>
+            <div class="movement-amount">${disp_amt}</div>
+            ${clp_sub}
+          </div>
           <button class="btn-delete" onclick="App.deleteFixed('${f.id}')">×</button>
         </div>`;
       });
@@ -1076,18 +1304,20 @@ const App = (() => {
       ? `Estos ${fmt(ft)} se descuentan del ingreso. Te quedan ${fmt(Math.max(inc-ft,0))} para gastos del mes.`
       : `Configura tu presupuesto (toca el lápiz en Inicio) para ver cuánto te queda.`;
 
+    const ufNote = isUF && _ufCache
+      ? `<span style="font-size:.68rem;color:var(--text-2);margin-left:6px">1 UF = $${Math.round(_ufCache.rate).toLocaleString('es-CL')}</span>`
+      : '';
     return `<form class="form-card fixed-form" id="fixed-form" autocomplete="off">
       <div class="form-title">Agregar gasto fijo</div>
-      <div>
-        <button type="button" class="chips-toggle" id="chips-toggle-btn" onclick="App.toggleSuggestions()">
-          <span>Sugerencias rápidas</span><span class="toggle-arrow">▼</span>
-        </button>
-        <div class="chips-collapse" id="chips-collapse"><div class="chips-wrap">${chips}</div></div>
-      </div>
       <div><label for="input-fixed-item">Item</label>
         <input type="text" id="input-fixed-item" placeholder="Ej: Arriendo, Crédito..." maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
-      <div><label for="input-fixed-amount">Monto mensual</label>
-        <input type="number" id="input-fixed-amount" placeholder="Ej: 800000" min="1" inputmode="numeric" enterkeyhint="next"/></div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="margin:0" for="input-fixed-amount">Monto mensual${ufNote}</label>
+          <button type="button" onclick="App.setFixedCurrency('${isUF?'CLP':'UF'}')" style="font-size:.65rem;padding:3px 9px;border:1.5px solid ${isUF?'var(--fixed)':'var(--border)'};border-radius:6px;background:${isUF?'var(--fixed-light)':'var(--bg)'};color:${isUF?'var(--fixed)':'var(--text-2)'};cursor:pointer;font-family:inherit;font-weight:700">${isUF?'UF ✓':'UF'}</button>
+        </div>
+        <input type="number" id="input-fixed-amount" placeholder="${isUF ? 'Ej: 12.5' : 'Ej: 800000'}" min="0.01" step="${isUF?'0.01':'1'}" inputmode="decimal" enterkeyhint="next"/>
+      </div>
       <div><label for="input-fixed-cat">Categoría</label>
         <select class="cat-select" id="input-fixed-cat">${catOpts}</select></div>
       <button type="submit" id="btn-save-fixed">+ Agregar gasto fijo</button>
@@ -1096,38 +1326,100 @@ const App = (() => {
     ${list}`;
   }
 
-  // ── Historial ─────────────────────────────────────────────────────
-  function renderMovements(mk, dt) {
-    const todayK = todayMk();
-    const hasNext = mk < todayK;
-    const nav = `<div class="month-nav">
-      <button class="month-nav-btn" onclick="App.goMonth(-1)">‹</button>
-      <span class="month-nav-label">${fmtMonthLabel(mk)}</span>
-      <button class="month-nav-btn" onclick="App.goMonth(1)" ${!hasNext?'disabled':''}>›</button>
-    </div>`;
-    const movs = state.movements.filter(m=>m.date.startsWith(mk));
-    if(!movs.length) return nav+`<div class="empty-state"><p>Sin movimientos en<br>${fmtMonthLabel(mk).toLowerCase()}.</p></div>`;
-    const groups={};
-    movs.forEach(m=>{ const k=fmtGroup(m.date); if(!groups[k]) groups[k]=[]; groups[k].push(m); });
-    let html=nav;
-    for(const [date,items] of Object.entries(groups)) {
-      html+=`<p class="section-title">${date}</p>`;
-      items.forEach(m=>{
-        const c=catStyle(m.category);
-        html+=`<div class="movement-item">
-          <div class="movement-info">
-            <div class="movement-name">${esc(m.item)}</div>
-            <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
-              <span style="font-size:.7rem;color:var(--text-2)">${fmtTime(m.date)}</span>
-              <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
+  // ── Historial — resumen mensual sin navegación ────────────────────
+  function renderHistorial() {
+    const monthSet = new Set();
+    state.movements.forEach(m=>monthSet.add(m.date.slice(0,7)));
+    state.savings.forEach(s=>monthSet.add(s.date.slice(0,7)));
+    const months = Array.from(monthSet).sort().reverse();
+
+    const ft  = fixedTotal();
+    const inc = totalIncome();
+    let html  = '';
+
+    if(!months.length) {
+      html = `<div class="empty-state"><p>Aún no hay historial.<br>Los meses con movimientos aparecerán aquí.</p></div>`;
+    } else {
+      months.forEach(mk=>{
+        const movs  = state.movements.filter(m=>m.date.startsWith(mk));
+        const savs  = state.savings.filter(s=>s.date.startsWith(mk));
+        const movT  = movs.reduce((s,m)=>s+m.amount,0);
+        const savT  = savs.reduce((s,v)=>s+v.amount,0);
+        const total = movT + ft;
+        const saldo = inc ? inc - total - savT : null;
+
+        const itemRows = movs.map(m=>{
+          const c = catStyle(m.category);
+          if(_editingMovement===m.id) {
+            // Modo edición inline
+            return `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
+              <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off"
+                style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none;width:100%"/>
+              <div style="display:flex;gap:6px">
+                <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric"
+                  style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none"/>
+                <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">✕</button>
+              </div>
+            </div>`;
+          }
+          return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
+            <div style="flex:1;min-width:0">
+              <span style="font-size:.82rem;font-weight:600">${esc(m.item)}</span>
+              <span class="cat-badge" style="background:${c.bg};color:${c.color};margin-left:6px">${c.label}</span>
             </div>
+            <span style="font-size:.82rem;font-weight:700;white-space:nowrap">${disp(m.amount)}</span>
+            <button onclick="App.editMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
+            <button onclick="App.deleteMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:.95rem;padding:2px 5px;border-radius:5px;line-height:1" title="Eliminar">×</button>
+          </div>`;
+        }).join('');
+
+        const savRows = savs.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.82rem;font-weight:600;color:#065f46">💰 ${esc(s.item)}</span>
+          <span style="font-size:.82rem;font-weight:700;color:#065f46">${disp(s.amount)}</span>
+        </div>`).join('');
+
+        html += `<div class="balance-card" style="gap:0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+            <p style="font-size:.85rem;font-weight:800;color:var(--text);text-transform:capitalize">${fmtMonthLabel(mk)}</p>
+            ${saldo!==null?`<span style="font-size:.72rem;color:var(--text-2)">Saldo: <strong style="color:${saldo>=0?'var(--success)':'var(--danger)'}">${disp(saldo)}</strong></span>`:''}
           </div>
-          <div class="movement-amount">${disp(m.amount)}</div>
-          <button class="btn-delete" onclick="App.deleteMovement('${m.id}')">×</button>
+          <div class="balance-breakdown">
+            ${ft?`<div class="breakdown-row fixed-row"><span class="br-label">Gastos fijos</span><span class="br-val">${disp(ft)}</span></div>`:''}
+            ${movT?`<div class="breakdown-row daily-row"><span class="br-label">Gastos del mes</span><span class="br-val">${disp(movT)}</span></div>`:''}
+            ${savT?`<div class="breakdown-row" style="background:#d1fae5"><span class="br-label" style="color:#065f46">Ahorros</span><span class="br-val" style="color:#065f46">${disp(savT)}</span></div>`:''}
+          </div>
+          <div style="margin-top:10px">${itemRows}${savRows}</div>
         </div>`;
       });
     }
-    html+=`<div class="total-bar"><span>Total del mes</span><strong>${disp(dt)}</strong></div>`;
+
+    // ── Papelera ──
+    const trashOpen = _openSections.has('sc-trash');
+    const trashCount = state.trash.length;
+    if(trashCount>0) {
+      const trashItems = state.trash.slice().sort((a,b)=>b.deletedAt.localeCompare(a.deletedAt)).map(t=>{
+        const dDate = new Date(t.deletedAt).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+          <div style="flex:1;min-width:0">
+            <span style="font-size:.82rem;font-weight:600;color:var(--text-2)">${esc(t.item)}</span>
+            <span style="font-size:.7rem;color:#94a3b8;margin-left:6px">${dDate}</span>
+          </div>
+          <span style="font-size:.82rem;font-weight:700;color:var(--text-2)">${disp(t.amount)}</span>
+          <button onclick="App.restoreMovement('${t.id}')" title="Restaurar" style="background:none;border:none;cursor:pointer;color:var(--success);font-size:.75rem;font-weight:700;padding:3px 7px;border:1.5px solid var(--success);border-radius:6px;font-family:inherit">↩ Restaurar</button>
+          <button onclick="App.permanentDeleteMovement('${t.id}')" title="Eliminar definitivo" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:.75rem;font-weight:700;padding:3px 7px;border:1.5px solid var(--danger);border-radius:6px;font-family:inherit">🗑 Borrar</button>
+        </div>`;
+      }).join('');
+
+      html += `<div class="sc-card" style="border:1.5px solid #fecaca">
+        <button class="sc-hdr" onclick="App.toggleSection('sc-trash')" style="color:var(--danger)">
+          <span>🗑 Desechados (${trashCount})</span>
+          <span class="sc-arrow ${trashOpen?'open':''}">▼</span>
+        </button>
+        ${trashOpen?`<div class="sc-body">${trashItems}</div>`:''}
+      </div>`;
+    }
+
     return html;
   }
 
@@ -1202,31 +1494,31 @@ const App = (() => {
           <span class="settings-row-label">Bloqueo automático</span>
           <span class="settings-row-val">${(bioOn||pinOn)?'120 seg':'—'}</span>
         </div>
-        <button class="btn-danger-outline" style="margin-top:4px" onclick="App.resetAuth()">Cambiar método de acceso</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-section-lbl">Apariencia</p>
+      <div class="settings-card">
+        <div class="settings-row" style="cursor:pointer" onclick="App.toggleDark()">
+          <span class="settings-row-label">${state.darkMode ? '🌙 Modo oscuro' : '☀️ Modo claro'}</span>
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span style="font-size:.78rem;color:var(--text-2)">${state.darkMode ? 'Activado' : 'Desactivado'}</span>
+            <span style="width:42px;height:24px;border-radius:12px;background:${state.darkMode ? 'var(--brand)' : 'var(--border)'};display:inline-flex;align-items:center;padding:2px;transition:background .2s">
+              <span style="width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transform:translateX(${state.darkMode ? '18px' : '0'});transition:transform .2s;display:block"></span>
+            </span>
+          </span>
+        </div>
       </div>
     </div>
 
     <div class="settings-section">
       <p class="settings-section-lbl">Mis datos</p>
       <div class="settings-card">
-        <div class="settings-row"><span class="settings-row-label">Movimientos</span><span class="settings-row-val">${state.movements.length}</span></div>
-        <div class="settings-row"><span class="settings-row-label">Gastos fijos</span><span class="settings-row-val">${state.fixedExpenses.length}</span></div>
-        <div class="settings-row"><span class="settings-row-label">Ahorros registrados</span><span class="settings-row-val">${state.savings.length}</span></div>
         <div class="settings-row"><span class="settings-row-label">Almacenamiento</span><span class="settings-row-val">Local · Privado</span></div>
+        <div class="settings-row"><span class="settings-row-label">Proyectos</span><span class="settings-row-val">${state.projects.length}</span></div>
       </div>
     </div>
-
-    ${scSection('sc-suggestions', 'Sugerencias rápidas', `
-      ${(state.suggestions||[]).map((s,i)=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:.88rem">${esc(s)}</span>
-          <button class="btn-delete" onclick="App.deleteSuggestion(${i})">×</button>
-        </div>`).join('') || `<p style="font-size:.82rem;color:var(--text-2);text-align:center;padding:6px 0">Sin sugerencias</p>`}
-      <div class="settings-field-row" style="margin-top:4px">
-        <input type="text" id="input-new-suggestion" placeholder="Ej: Arriendo, Gimnasio..." maxlength="30" autocorrect="off" spellcheck="false"/>
-        <button class="btn-settings-save" onclick="App.addSuggestionUI()">+ Agregar</button>
-      </div>
-    `)}
 
     ${scSection('sc-mov-cats', 'Categoría gastos mensuales', `
       ${(state.movCats||[]).map((c,i)=>`
@@ -1303,20 +1595,28 @@ const App = (() => {
     });
 
     const ff=document.getElementById('fixed-form');
-    if(ff) ff.addEventListener('submit', e=>{
+    if(ff) ff.addEventListener('submit', async e=>{
       e.preventDefault();
       const item=document.getElementById('input-fixed-item').value.trim();
-      const amt=parseFloat(document.getElementById('input-fixed-amount').value);
+      const rawAmt=parseFloat(document.getElementById('input-fixed-amount').value);
       const cat=document.getElementById('input-fixed-cat')?.value||'';
-      if(!item||!amt||amt<=0) return;
-      if(!addFixed(item,amt,cat)) return;
+      if(!item||!rawAmt||rawAmt<=0) return;
+      let finalAmt=rawAmt, currency='CLP', ufAmount=null, ufRate=null;
+      if(_fixedCurrency==='UF'){
+        const rate=await fetchUF();
+        if(!rate){ toast('No se pudo obtener el valor UF. Intenta de nuevo.'); return; }
+        finalAmt=Math.round(rawAmt*rate);
+        currency='UF'; ufAmount=rawAmt; ufRate=rate;
+        toast(`${rawAmt} UF = ${fmt(finalAmt)}`);
+      }
+      if(!addFixed(item,finalAmt,cat,currency,ufAmount,ufRate)) return;
       const btn=document.getElementById('btn-save-fixed');
       btn.textContent='Agregado ✓'; btn.classList.add('saved');
       setTimeout(()=>{btn.textContent='+ Agregar gasto fijo';btn.classList.remove('saved');},1200);
       document.getElementById('input-fixed-item').value='';
       document.getElementById('input-fixed-amount').value='';
       document.getElementById('input-fixed-item').focus();
-      toast(`${item} — ${fmt(amt)}`);
+      if(currency==='CLP') toast(`${item} — ${fmt(finalAmt)}`);
     });
 
     const si=document.getElementById('settings-income');
@@ -1349,9 +1649,14 @@ const App = (() => {
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
     saveSettingsInline, saveUsername, resetAuth, goMonth,
     doUpdate, refreshIfSettings,
-    addSuggestionUI, addSavingsCatUI, deleteSavingsCat,
+    addSavingsCatUI, deleteSavingsCat,
     toggleSection,
-    addMovCatUI, deleteMovCat, addFixedCatUI, deleteFixedCat
+    addMovCatUI, deleteMovCat, addFixedCatUI, deleteFixedCat,
+    setFixedCurrency, jumpToMonth,
+    addProjectUI, deleteProject,
+    editMovement, saveEditMovement, cancelEditMovement,
+    permanentDeleteMovement, restoreMovement,
+    toggleDark
   };
 })();
 
@@ -1366,60 +1671,69 @@ const App = (() => {
 
   function showApp() { lockScreen.classList.add('hidden'); App.init(); }
 
+  function autoLock() {
+    let bgTime=null;
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ bgTime=Date.now(); }
+      else { if(bgTime&&Date.now()-bgTime>120000) location.reload(); bgTime=null; }
+    });
+  }
+
   // ── PIN pad helper ─────────────────────────────────────────────
   function makePinPad(dotsIds, padId, delId, onComplete, msgId) {
     let entered = '';
     const dots  = dotsIds.map(id=>document.getElementById(id));
     const msg   = msgId ? document.getElementById(msgId) : null;
-
-    function updateDots() {
-      dots.forEach((d,i)=> d.classList.toggle('filled', i<entered.length));
-    }
-    function reset(txt) {
-      entered = '';
-      updateDots();
-      if(msg) { msg.textContent=txt||''; }
-    }
-
+    function updateDots() { dots.forEach((d,i)=> d.classList.toggle('filled', i<entered.length)); }
+    function reset(txt)   { entered=''; updateDots(); if(msg){ msg.textContent=txt||''; } }
     document.getElementById(padId).querySelectorAll('.pin-key[data-d]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         if(entered.length>=4) return;
-        entered += btn.dataset.d;
-        updateDots();
-        if(entered.length===4) { const v=entered; entered=''; updateDots(); onComplete(v, reset); }
+        entered += btn.dataset.d; updateDots();
+        if(entered.length===4){ const v=entered; entered=''; updateDots(); onComplete(v, reset); }
       });
     });
-    document.getElementById(delId).addEventListener('click', ()=>{
-      entered=entered.slice(0,-1); updateDots();
-    });
-
+    document.getElementById(delId).addEventListener('click', ()=>{ entered=entered.slice(0,-1); updateDots(); });
     return { reset };
   }
 
-  // ── Flujo: PIN ya configurado ─────────────────────────────────
+  // ── PIN setup flow (fallback cuando no hay biometría) ─────────
+  function startPinSetup() {
+    setupDiv.classList.add('hidden');
+    setupPinDiv.classList.remove('hidden');
+    let firstPin='', confirmStep=false;
+    makePinPad(['spd0','spd1','spd2','spd3'],'setup-pin-pad','setup-pin-del', (pin, reset)=>{
+      if(!confirmStep){
+        firstPin=pin; confirmStep=true;
+        document.getElementById('setup-pin-subtitle').textContent='Confirma tu PIN';
+        reset();
+      } else {
+        if(pin===firstPin){ Auth.setupPin(pin); showApp(); }
+        else {
+          document.getElementById('setup-pin-msg').textContent='Los PIN no coinciden';
+          confirmStep=false; firstPin='';
+          document.getElementById('setup-pin-subtitle').textContent='Crea tu PIN de 4 dígitos';
+          setTimeout(()=>{ document.getElementById('setup-pin-msg').textContent=''; reset(); }, 700);
+        }
+      }
+    }, 'setup-pin-msg');
+  }
+
+  // ── Flujo: PIN ya configurado (fallback sin bio) ───────────────
   if (Auth.isPinEnabled()) {
     lockScreen.classList.remove('hidden');
     pinAuthDiv.classList.remove('hidden');
     makePinPad(['apd0','apd1','apd2','apd3'],'auth-pin-pad','auth-pin-del',
       (pin, reset)=>{
-        if(Auth.verifyPin(pin)) { showApp(); }
+        if(Auth.verifyPin(pin)){ showApp(); }
         else {
           const dots=['apd0','apd1','apd2','apd3'].map(id=>document.getElementById(id));
           dots.forEach(d=>d.classList.add('shake'));
           document.getElementById('auth-pin-msg').textContent='PIN incorrecto';
           setTimeout(()=>{ dots.forEach(d=>d.classList.remove('shake')); document.getElementById('auth-pin-msg').textContent=''; reset(); }, 600);
         }
-      }, 'auth-pin-msg'
-    );
-    document.getElementById('btn-skip-pin-auth').addEventListener('click', showApp);
-
-    // Re-bloquear background
-    let bgTime=null;
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.hidden){ bgTime=Date.now(); }
-      else { if(bgTime&&Date.now()-bgTime>120000) location.reload(); bgTime=null; }
-    });
-    return;
+      }, 'auth-pin-msg');
+    autoLock(); return;
   }
 
   // ── Flujo: Bio ya configurada ──────────────────────────────────
@@ -1427,7 +1741,6 @@ const App = (() => {
     lockScreen.classList.remove('hidden');
     authDiv.classList.remove('hidden');
     const fpBtn = document.getElementById('btn-authenticate');
-
     async function tryAuth() {
       fpBtn.classList.remove('error'); fpBtn.classList.add('pulse');
       const ok = await Auth.authenticateBio();
@@ -1435,68 +1748,32 @@ const App = (() => {
       if(ok){ showApp(); } else { fpBtn.classList.add('error'); setTimeout(()=>fpBtn.classList.remove('error'),600); }
     }
     fpBtn.addEventListener('click', tryAuth);
-    document.getElementById('btn-skip-auth').addEventListener('click', showApp);
     setTimeout(tryAuth, 300);
-
-    let bgTime=null;
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.hidden){ bgTime=Date.now(); }
-      else { if(bgTime&&Date.now()-bgTime>120000) location.reload(); bgTime=null; }
-    });
-    return;
+    autoLock(); return;
   }
 
-  // ── Flujo: primera vez — setup ─────────────────────────────────
-  if (supported && !Auth.wasSkipped()) {
-    lockScreen.classList.remove('hidden');
+  // ── Primera vez: forzar setup ──────────────────────────────────
+  lockScreen.classList.remove('hidden');
+
+  if (supported) {
+    // Dispositivo con biometría → solo bio, sin skip
     setupDiv.classList.remove('hidden');
-
-    // Opción: huella
+    const bioMsg = document.getElementById('setup-bio-msg');
     document.getElementById('btn-setup-bio').addEventListener('click', async ()=>{
+      if(bioMsg) bioMsg.textContent = 'Verificando...';
       const ok = await Auth.registerBio();
-      if(ok){ showApp(); } else { Auth.setSkipped(); showApp(); }
-    });
-
-    // Opción: PIN
-    document.getElementById('btn-setup-pin').addEventListener('click', ()=>{
-      setupDiv.classList.add('hidden');
-      setupPinDiv.classList.remove('hidden');
-    });
-
-    // Omitir
-    document.getElementById('btn-skip-bio').addEventListener('click', ()=>{ Auth.setSkipped(); showApp(); });
-
-    // ── PIN setup flow ──
-    let firstPin = '';
-    let confirmStep = false;
-
-    const setupPad = makePinPad(['spd0','spd1','spd2','spd3'],'setup-pin-pad','setup-pin-del',
-      (pin, reset)=>{
-        if(!confirmStep) {
-          firstPin    = pin;
-          confirmStep = true;
-          document.getElementById('setup-pin-subtitle').textContent = 'Confirma tu PIN';
-          reset();
-        } else {
-          if(pin===firstPin) {
-            Auth.setupPin(pin); showApp();
-          } else {
-            document.getElementById('setup-pin-msg').textContent='Los PIN no coinciden';
-            confirmStep=false; firstPin='';
-            document.getElementById('setup-pin-subtitle').textContent='Crea tu PIN de 4 dígitos';
-            setTimeout(()=>{ document.getElementById('setup-pin-msg').textContent=''; reset(); }, 700);
-          }
-        }
-      }, 'setup-pin-msg'
-    );
-
-    document.getElementById('btn-back-setup').addEventListener('click', ()=>{
-      setupPinDiv.classList.add('hidden');
-      setupDiv.classList.remove('hidden');
-      firstPin=''; confirmStep=false;
+      if(ok){ showApp(); }
+      else {
+        if(bioMsg) bioMsg.textContent = 'No se pudo activar. Toca para intentar de nuevo.';
+      }
     });
   } else {
-    showApp();
+    // Dispositivo sin biometría → PIN como único método
+    setupPinDiv.classList.remove('hidden');
+    document.getElementById('setup-pin-subtitle').textContent = 'Crea tu PIN de 4 dígitos';
+    const backBtn = document.getElementById('btn-back-setup');
+    if(backBtn) backBtn.style.display = 'none';
+    startPinSetup();
   }
 })();
 
