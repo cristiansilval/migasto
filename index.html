@@ -1688,17 +1688,35 @@ const App = (() => {
     try {
       const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
       if(!payload.v||!payload.name||!payload.total){ toast('Código inválido'); return; }
-      // Pre-llenar el formulario con los datos
+      const isUFPayload = payload.currency === 'UF' && payload.ufTotal;
+      // Activar modo UF si corresponde (re-renderiza el form)
+      if(isUFPayload && _sharedCurrency !== 'UF') {
+        _sharedCurrency = 'UF';
+        if(payload.ufRate) _ufCache = { rate: payload.ufRate, date: new Date().toISOString().slice(0,10) };
+        render();
+      } else if(!isUFPayload && _sharedCurrency !== 'CLP') {
+        _sharedCurrency = 'CLP';
+        render();
+      }
+      // Pre-llenar el formulario
       const nameEl  = document.getElementById('sh-name');
       const totalEl = document.getElementById('sh-total');
       const pctEl   = document.getElementById('sh-pct');
       const myAmt   = document.getElementById('sh-myamt');
       if(nameEl)  nameEl.value  = payload.name;
-      if(totalEl) totalEl.value = payload.total;
+      if(totalEl) totalEl.value = isUFPayload ? payload.ufTotal : payload.total;
       if(pctEl)   pctEl.value   = payload.pct;
-      if(myAmt)   myAmt.textContent   = disp(payload.amt);
-      if(el)      el.value      = '';
-      toast(`"${payload.name}" importado — revisa y guarda`);
+      if(myAmt) {
+        if(isUFPayload && payload.ufAmt) {
+          const clpAmt = Math.round(payload.ufAmt * (payload.ufRate||0));
+          myAmt.innerHTML = `${payload.ufAmt} UF <span style="font-size:.72rem;color:var(--text-2);font-weight:600">≈ ${disp(clpAmt)}</span>`;
+        } else {
+          myAmt.textContent = disp(payload.amt);
+        }
+      }
+      if(el) el.value = '';
+      const ufMsg = isUFPayload ? ` · ${payload.ufAmt} UF ≈ ${disp(Math.round(payload.ufAmt*(payload.ufRate||0)))}` : '';
+      toast(`"${payload.name}" importado${ufMsg} — revisa y guarda`);
     } catch { toast('Código inválido o corrupto'); }
   }
 
