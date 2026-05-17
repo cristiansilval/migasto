@@ -20,25 +20,20 @@ set VERSION=%dt:~0,12%
 powershell -Command "$content = Get-Content 'sw.js' -Raw; $content = $content -replace \"const CACHE = 'migasto-v[^']*';\", \"const CACHE = 'migasto-v%VERSION%';\"; Set-Content 'sw.js' $content -NoNewline"
 echo Cache version actualizada: migasto-v%VERSION%
 
-:: Git
+:: Git - con esto solo ya se publica en GitHub Pages
 echo.
-echo Subiendo a GitHub...
+echo Subiendo a GitHub Pages...
 git add -A
 git commit -m "%MENSAJE%"
 git push
 
-:: Netlify
-echo.
-echo Publicando en Netlify...
-call netlify deploy --dir . --prod
-
 echo.
 echo ================================
 echo  Listo! App actualizada en:
-echo  https://migasto-cristian.netlify.app
+echo  https://cristiansilval.github.io/migasto/
 echo.
 echo  En el celular: desliza para
-echo  refrescar y veran los cambios.
+echo  refrescar y veras los cambios.
 echo ================================
 echo.
 pause
