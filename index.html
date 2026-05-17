@@ -390,7 +390,7 @@
 </div>
 
 <script>
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 
 // ══ CATEGORÍAS ═══════════════════════════════════════════════════════
 const CATS = {
@@ -425,7 +425,11 @@ const App = (() => {
   let _fixedCurrency     = 'CLP';    // currency selector in fixed form (not persisted)
   let _sharedCurrency    = 'CLP';    // currency selector in shared form (not persisted)
   let _editingMovement   = null;     // id del movimiento en edición
-  let _ufCache       = null;     // { rate, date }
+  let _ufCache           = null;     // { rate, date }
+  let _paymentMethod     = 'cash';   // 'cash' | 'tc'
+  let _editingFixed      = null;     // id del gasto fijo en edición
+  let _editingSaving     = null;     // id del ahorro en edición
+  let _editingProject    = null;     // id del proyecto en edición
 
   async function fetchUF() {
     const today = (()=>{ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
@@ -509,6 +513,12 @@ const App = (() => {
     const d = new Date(y, m-1+delta, 1);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }
+  function addMonths(mk, n) {
+    let [y, m] = mk.split('-').map(Number);
+    m += n;
+    while(m > 12) { m -= 12; y++; }
+    return `${y}-${String(m).padStart(2,'0')}`;
+  }
 
   // ── Cálculos ──────────────────────────────────────────────────────
   function totalIncome() {
@@ -567,9 +577,39 @@ const App = (() => {
   }
 
   // ── Acciones ──────────────────────────────────────────────────────
-  function addMovement(item, amount, category) {
-    state.movements.unshift({ id:Date.now().toString(), item:item.trim(), amount:Number(amount), date:new Date().toISOString(), category:category||'' });
+  function addMovement(item, amount, category, paymentMethod, cuotas) {
+    if (paymentMethod === 'tc' && cuotas && cuotas > 1) {
+      const mk = activeMk();
+      const montoCuota = Math.round(Number(amount) / cuotas);
+      for (let i = 1; i <= cuotas; i++) {
+        const targetMk = addMonths(mk, i - 1);
+        const baseId = i === 1 ? Date.now().toString() : `${Date.now()}-${i}`;
+        state.movements.unshift({
+          id: baseId,
+          item: `${item.trim()} (${i}/${cuotas})`,
+          amount: montoCuota,
+          date: `${targetMk}-01`,
+          category: category || '',
+          paymentMethod: 'tc'
+        });
+      }
+    } else {
+      state.movements.unshift({
+        id: Date.now().toString(),
+        item: item.trim(),
+        amount: Number(amount),
+        date: new Date().toISOString(),
+        category: category || '',
+        ...(paymentMethod === 'tc' ? { paymentMethod: 'tc' } : {})
+      });
+    }
+    _paymentMethod = 'cash';
     save(); render();
+  }
+
+  function setPaymentMethod(m) {
+    _paymentMethod = m;
+    render();
   }
   function deleteMovement(id) {
     // Soft delete → va a papelera
@@ -660,12 +700,29 @@ const App = (() => {
     });
     const list = sorted.length ? sorted.map(p=>{
       const label = p.date ? fmtMonthLabel(p.date) : 'Sin fecha';
+      if (_editingProject === p.id) {
+        return `<div class="movement-item" style="flex-direction:column;align-items:stretch">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:2px 0">
+            <input id="edit-proj-name-${p.id}" value="${esc(p.item)}" maxlength="60" autocorrect="off"
+              style="border:1.5px solid #f59e0b;border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%"/>
+            <input id="edit-proj-amt-${p.id}" type="number" value="${p.amount}" min="1" inputmode="numeric"
+              style="border:1.5px solid #f59e0b;border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%"/>
+            <input id="edit-proj-date-${p.id}" type="month" value="${p.date||''}"
+              style="border:1.5px solid #f59e0b;border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%"/>
+            <div style="display:flex;gap:8px">
+              <button onclick="App.saveEditProject('${p.id}')" style="flex:1;padding:8px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+              <button onclick="App.cancelEditProject()" style="flex:1;padding:8px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+            </div>
+          </div>
+        </div>`;
+      }
       return `<div class="movement-item">
         <div class="movement-info">
           <div class="movement-name">${esc(p.item)}</div>
           <div style="font-size:.72rem;color:var(--text-2);margin-top:2px">${label}</div>
         </div>
         <div class="movement-amount" style="color:#f59e0b">${disp(p.amount)}</div>
+        <button onclick="App.editProject('${p.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
         <button class="btn-delete" onclick="App.deleteProject('${p.id}')">×</button>
       </div>`;
     }).join('') : `<div class="empty-state"><p>Sin proyectos aún.<br>Agrega gastos futuros planificados.</p></div>`;
@@ -702,6 +759,47 @@ const App = (() => {
     if (!confirm('¿Eliminar este gasto fijo?')) return;
     state.fixedExpenses = state.fixedExpenses.filter(f=>f.id!==id);
     save(); render(); toast('Gasto fijo eliminado');
+  }
+
+  function editFixed(id) { _editingFixed = id; setTab('fixed'); }
+  function cancelEditFixed() { _editingFixed = null; render(); }
+  function saveEditFixed(id) {
+    const nameEl = document.getElementById(`edit-fixed-name-${id}`);
+    const amtEl  = document.getElementById(`edit-fixed-amt-${id}`);
+    const name = (nameEl?.value||'').trim();
+    const amt  = parseFloat(amtEl?.value);
+    if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
+    const f = state.fixedExpenses.find(f=>f.id===id);
+    if(f){ f.item=name; f.amount=amt; }
+    _editingFixed=null; save(); render(); toast('Guardado ✓');
+  }
+
+  function editSaving(id) { _editingSaving = id; setTab('savings'); }
+  function cancelEditSaving() { _editingSaving = null; render(); }
+  function saveEditSaving(id) {
+    const nameEl = document.getElementById(`edit-sav-name-${id}`);
+    const amtEl  = document.getElementById(`edit-sav-amt-${id}`);
+    const name = (nameEl?.value||'').trim();
+    const amt  = parseFloat(amtEl?.value);
+    if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
+    const s = state.savings.find(s=>s.id===id);
+    if(s){ s.item=name; s.amount=amt; }
+    _editingSaving=null; save(); render(); toast('Guardado ✓');
+  }
+
+  function editProject(id) { _editingProject = id; setTab('projects'); }
+  function cancelEditProject() { _editingProject = null; render(); }
+  function saveEditProject(id) {
+    const nameEl = document.getElementById(`edit-proj-name-${id}`);
+    const amtEl  = document.getElementById(`edit-proj-amt-${id}`);
+    const dateEl = document.getElementById(`edit-proj-date-${id}`);
+    const name = (nameEl?.value||'').trim();
+    const amt  = parseFloat(amtEl?.value);
+    const date = (dateEl?.value||'').trim();
+    if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
+    const p = state.projects.find(p=>p.id===id);
+    if(p){ p.item=name; p.amount=amt; p.date=date||null; }
+    _editingProject=null; save(); render(); toast('Guardado ✓');
   }
   function addSaving(item, amount, savCat) {
     state.savings.unshift({ id:'s'+Date.now(), item:item.trim(), amount:Number(amount), date:new Date().toISOString(), savCat:savCat||'' });
@@ -764,6 +862,13 @@ const App = (() => {
 
   // ── Tabs ──────────────────────────────────────────────────────────
   function setTab(tab) {
+    // Reset edit states when navigating away (except when explicitly editing)
+    if(tab !== state.tab) {
+      if(tab !== 'fixed')    _editingFixed   = null;
+      if(tab !== 'savings')  _editingSaving  = null;
+      if(tab !== 'projects') _editingProject = null;
+      if(tab !== 'daily')    _paymentMethod  = 'cash';
+    }
     state.tab=tab;
     document.getElementById('nav-daily').className     = 'nav-btn'+(tab==='daily'     ?' active-daily':'');
     document.getElementById('nav-fixed').className     = 'nav-btn'+(tab==='fixed'     ?' active-fixed':'');
@@ -926,12 +1031,16 @@ const App = (() => {
       html+=`<p class="section-title">${date}</p>`;
       items.forEach(m=>{
         const c=catStyle(m.category);
+        const tcBadge = m.paymentMethod==='tc'
+          ? `<span style="font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:99px;background:#f5f3ff;color:#7c3aed;letter-spacing:.04em;text-transform:uppercase;border:1px solid #ddd6fe">TC</span>`
+          : '';
         html+=`<div class="movement-item">
           <div class="movement-info">
             <div class="movement-name">${esc(m.item)}</div>
-            <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
+            <div style="display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap">
               <span style="font-size:.7rem;color:var(--text-2)">${fmtTime(m.date)}</span>
               <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
+              ${tcBadge}
             </div>
           </div>
           <div class="movement-amount">${disp(m.amount)}</div>
@@ -997,11 +1106,31 @@ const App = (() => {
     const movCats = state.movCats || DEFAULT_MOV_CATS;
     const catOpts = `<option value="">Sin categoría</option>`
       + movCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    const isCash = _paymentMethod === 'cash';
+    const isTC   = _paymentMethod === 'tc';
+    const cuotasField = isTC ? `<div style="animation:slideIn .2s ease">
+      <label for="input-cuotas">Número de cuotas</label>
+      <input type="number" id="input-cuotas" placeholder="Ej: 3" min="1" value="1" inputmode="numeric" enterkeyhint="next" style="border:1.5px solid #7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)"/>
+    </div>` : '';
     return `<form class="form-card" id="expense-form" autocomplete="off">
       <div><label for="input-item">¿En qué gastaste?</label>
         <input type="text" id="input-item" placeholder="Ej: Almuerzo, Bus, Café..." maxlength="60" autocorrect="off" spellcheck="false" enterkeyhint="next"/></div>
       <div><label for="input-amount">¿Cuánto?</label>
         <input type="number" id="input-amount" placeholder="Ej: 6000" min="1" inputmode="numeric" enterkeyhint="next"/></div>
+      <div>
+        <label>Método de pago</label>
+        <div style="display:flex;gap:8px">
+          <button type="button" onclick="App.setPaymentMethod('cash')"
+            style="flex:1;padding:9px;border:1.5px solid ${isCash?'var(--brand)':'var(--border)'};border-radius:var(--radius-sm);background:${isCash?'var(--brand-light)':'var(--bg)'};color:${isCash?'var(--brand)':'var(--text-2)'};font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s">
+            💵 Efectivo/Débito
+          </button>
+          <button type="button" onclick="App.setPaymentMethod('tc')"
+            style="flex:1;padding:9px;border:1.5px solid ${isTC?'#7c3aed':'var(--border)'};border-radius:var(--radius-sm);background:${isTC?'#f5f3ff':'var(--bg)'};color:${isTC?'#7c3aed':'var(--text-2)'};font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s">
+            💳 Tarjeta de Crédito
+          </button>
+        </div>
+      </div>
+      ${cuotasField}
       <div><label for="input-cat">Categoría</label>
         <select class="cat-select" id="input-cat">${catOpts}</select></div>
       <button type="submit" id="btn-save">Guardar movimiento</button>
@@ -1034,14 +1163,29 @@ const App = (() => {
     const catOpts = `<option value="">Sin categoría</option>`
       + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     const list = savs.length
-      ? savs.map(s=>`<div class="savings-item">
-          <div style="flex:1;min-width:0">
-            <div class="savings-item-name">${esc(s.item)}</div>
-            ${s.savCat?`<span style="font-size:.65rem;opacity:.7">${esc(s.savCat)}</span>`:''}
-          </div>
-          <span class="savings-item-amt">${disp(s.amount)}</span>
-          <button class="btn-savings-del" onclick="App.deleteSaving('${s.id}')">×</button>
-        </div>`).join('')
+      ? savs.map(s=>{
+          if (_editingSaving === s.id) {
+            return `<div class="savings-item" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 0">
+              <input id="edit-sav-name-${s.id}" value="${esc(s.item)}" maxlength="50" autocorrect="off"
+                style="border:1.5px solid rgba(255,255,255,.5);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:#fff;background:rgba(255,255,255,.15);outline:none;width:100%"/>
+              <input id="edit-sav-amt-${s.id}" type="number" value="${s.amount}" min="1" inputmode="numeric"
+                style="border:1.5px solid rgba(255,255,255,.5);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:#fff;background:rgba(255,255,255,.15);outline:none;width:100%"/>
+              <div style="display:flex;gap:8px">
+                <button onclick="App.saveEditSaving('${s.id}')" style="flex:1;padding:7px;background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                <button onclick="App.cancelEditSaving()" style="flex:1;padding:7px;background:transparent;color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+              </div>
+            </div>`;
+          }
+          return `<div class="savings-item">
+            <div style="flex:1;min-width:0">
+              <div class="savings-item-name">${esc(s.item)}</div>
+              ${s.savCat?`<span style="font-size:.65rem;opacity:.7">${esc(s.savCat)}</span>`:''}
+            </div>
+            <span class="savings-item-amt">${disp(s.amount)}</span>
+            <button onclick="App.editSaving('${s.id}')" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.5);font-size:.85rem;padding:2px 4px;line-height:1" title="Editar">✏️</button>
+            <button class="btn-savings-del" onclick="App.deleteSaving('${s.id}')">×</button>
+          </div>`;
+        }).join('')
       : `<p class="savings-empty">Sin ahorros este mes. Empieza a guardar 💪</p>`;
     return `<div class="savings-card">
       <div class="savings-header"><span class="savings-title">💰 Ahorros del mes</span><span class="savings-total">${disp(total)}</span></div>
@@ -1105,17 +1249,33 @@ const App = (() => {
         const isUFEntry = f.currency==='UF' && f.ufAmount;
         const disp_amt = isUFEntry ? `${f.ufAmount} UF` : disp(f.amount);
         const clp_sub  = isUFEntry ? `<div style="font-size:.65rem;color:var(--text-2);text-align:right;margin-top:1px">${disp(f.amount)}</div>` : '';
-        list += `<div class="movement-item">
-          <div class="movement-info">
-            <div class="movement-name">${esc(f.item)}</div>
-            <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
-          </div>
-          <div>
-            <div class="movement-amount">${disp_amt}</div>
-            ${clp_sub}
-          </div>
-          <button class="btn-delete" onclick="App.deleteFixed('${f.id}')">×</button>
-        </div>`;
+        if (_editingFixed === f.id) {
+          list += `<div class="movement-item" style="flex-direction:column;align-items:stretch">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:2px 0">
+              <input id="edit-fixed-name-${f.id}" value="${esc(f.item)}" maxlength="60" autocorrect="off"
+                style="border:1.5px solid var(--fixed);border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%"/>
+              <input id="edit-fixed-amt-${f.id}" type="number" value="${f.amount}" min="1" inputmode="numeric"
+                style="border:1.5px solid var(--fixed);border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%"/>
+              <div style="display:flex;gap:8px">
+                <button onclick="App.saveEditFixed('${f.id}')" style="flex:1;padding:8px;background:var(--fixed);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                <button onclick="App.cancelEditFixed()" style="flex:1;padding:8px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+              </div>
+            </div>
+          </div>`;
+        } else {
+          list += `<div class="movement-item">
+            <div class="movement-info">
+              <div class="movement-name">${esc(f.item)}</div>
+              <span class="cat-badge" style="background:${c.bg};color:${c.color}">${c.label}</span>
+            </div>
+            <div>
+              <div class="movement-amount">${disp_amt}</div>
+              ${clp_sub}
+            </div>
+            <button onclick="App.editFixed('${f.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
+            <button class="btn-delete" onclick="App.deleteFixed('${f.id}')">×</button>
+          </div>`;
+        }
       });
       list += `<div class="total-bar fixed-total"><span>Total fijos / mes</span><strong>${disp(ft)}</strong></div>`;
     }
@@ -1653,14 +1813,18 @@ const App = (() => {
       const amt=parseFloat(document.getElementById('input-amount').value);
       const cat=document.getElementById('input-cat')?.value||'';
       if(!item||!amt||amt<=0) return;
+      const pm = _paymentMethod;
+      const cuotasEl = document.getElementById('input-cuotas');
+      const cuotas = cuotasEl ? Math.max(1, parseInt(cuotasEl.value)||1) : 1;
       const btn=document.getElementById('btn-save');
       btn.textContent='¡Guardado!'; btn.classList.add('saved');
       setTimeout(()=>{btn.textContent='Guardar movimiento';btn.classList.remove('saved');},1200);
-      addMovement(item,amt,cat);
+      addMovement(item,amt,cat,pm,cuotas);
       document.getElementById('input-item').value='';
       document.getElementById('input-amount').value='';
       document.getElementById('input-item').focus();
-      toast(`${item} — ${fmt(amt)}`);
+      if(pm==='tc'&&cuotas>1) toast(`${item} — ${cuotas} cuotas de ${fmt(Math.round(amt/cuotas))}`);
+      else toast(`${item} — ${fmt(amt)}`);
     });
 
     const ff=document.getElementById('fixed-form');
@@ -1728,7 +1892,11 @@ const App = (() => {
     editMovement, saveEditMovement, cancelEditMovement,
     permanentDeleteMovement, restoreMovement,
     toggleDark,
-    addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount, setSharedCurrency
+    addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount, setSharedCurrency,
+    addMonths, setPaymentMethod,
+    editFixed, saveEditFixed, cancelEditFixed,
+    editSaving, saveEditSaving, cancelEditSaving,
+    editProject, saveEditProject, cancelEditProject
   };
 })();
 
