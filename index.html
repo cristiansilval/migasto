@@ -259,8 +259,7 @@
     .nav-btn.active-settings  .nav-icon-wrap { background: #e0f2fe; }
     .nav-btn.active-shared { color: #0891b2; }
     .nav-btn.active-shared .nav-icon-wrap { background: #ecfeff; }
-    .header-left { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .header-left:active h1 { opacity: .8; }
+    .header-left { cursor: default; }
 
     /* ── Modal ── */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: flex-end; z-index: 200; animation: fadeIn .2s ease; }
@@ -326,9 +325,11 @@
 <!-- ═══ APP ═══════════════════════════════════════════════════════════ -->
 <div id="app">
   <header>
-    <div class="header-left" onclick="App.setTab('home')" style="cursor:pointer;-webkit-tap-highlight-color:transparent" title="Resumen">
-      <h1>MiGasto</h1>
-      <span id="resumen-chip" style="font-size:.55rem;font-weight:700;letter-spacing:.05em;opacity:0;text-transform:uppercase">Resumen</span>
+    <div class="header-left">
+      <div style="display:flex;align-items:center;gap:8px">
+        <h1>MiGasto</h1>
+        <button id="btn-resumen" onclick="App.setTab('home')" style="font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-family:inherit;letter-spacing:.03em;-webkit-tap-highlight-color:transparent;transition:background .15s">Resumen</button>
+      </div>
       <div class="header-username" id="header-username"></div>
     </div>
     <div class="header-right">
@@ -771,9 +772,8 @@ const App = (() => {
     document.getElementById('nav-projects').className  = 'nav-btn'+(tab==='projects'  ?' active-projects':'');
     document.getElementById('nav-shared').className    = 'nav-btn'+(tab==='shared'    ?' active-shared':'');
     document.getElementById('btn-settings-header').className = 'btn-eye-header'+(tab==='settings' ?' active-settings':'');
-    // Resumen chip: visible cuando no estás en home
-    const chip = document.getElementById('resumen-chip');
-    if(chip) chip.style.opacity = tab==='home' ? '0' : '0.7';
+    const btnRes = document.getElementById('btn-resumen');
+    if(btnRes) btnRes.style.background = tab==='home' ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.15)';
     render();
   }
 
