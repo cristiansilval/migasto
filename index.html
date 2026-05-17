@@ -1316,7 +1316,7 @@ const App = (() => {
           <label style="margin:0" for="input-fixed-amount">Monto mensual${ufNote}</label>
           <button type="button" onclick="App.setFixedCurrency('${isUF?'CLP':'UF'}')" style="font-size:.65rem;padding:3px 9px;border:1.5px solid ${isUF?'var(--fixed)':'var(--border)'};border-radius:6px;background:${isUF?'var(--fixed-light)':'var(--bg)'};color:${isUF?'var(--fixed)':'var(--text-2)'};cursor:pointer;font-family:inherit;font-weight:700">${isUF?'UF ✓':'UF'}</button>
         </div>
-        <input type="number" id="input-fixed-amount" placeholder="${isUF ? 'Ej: 12.5' : 'Ej: 800000'}" min="0.01" step="${isUF?'0.01':'1'}" inputmode="decimal" enterkeyhint="next"/>
+        <input type="number" id="input-fixed-amount" placeholder="${isUF ? 'Ej: 12.5' : 'Ej: 800000'}" min="0.01" step="${isUF?'any':'1'}" inputmode="decimal" enterkeyhint="next"/>
       </div>
       <div><label for="input-fixed-cat">Categoría</label>
         <select class="cat-select" id="input-fixed-cat">${catOpts}</select></div>
