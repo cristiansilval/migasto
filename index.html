@@ -299,6 +299,10 @@
     .nav-btn.active-projects  .nav-icon-wrap { background: #fef3c7; }
     .nav-btn.active-settings  { color: #0ea5e9; }
     .nav-btn.active-settings  .nav-icon-wrap { background: #e0f2fe; }
+    .nav-btn.active-shared { color: #0891b2; }
+    .nav-btn.active-shared .nav-icon-wrap { background: #ecfeff; }
+    .header-left { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .header-left:active h1 { opacity: .8; }
 
     /* ── Modal ── */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: flex-end; z-index: 200; animation: fadeIn .2s ease; }
@@ -466,8 +470,9 @@
 <!-- ═══ APP ═══════════════════════════════════════════════════════════ -->
 <div id="app">
   <header>
-    <div class="header-left">
+    <div class="header-left" onclick="App.setTab('home')" style="cursor:pointer;-webkit-tap-highlight-color:transparent" title="Resumen">
       <h1>MiGasto</h1>
+      <span id="resumen-chip" style="font-size:.55rem;font-weight:700;letter-spacing:.05em;opacity:0;text-transform:uppercase">Resumen</span>
       <div class="header-username" id="header-username"></div>
     </div>
     <div class="header-right">
@@ -486,10 +491,6 @@
   </div>
 
   <nav>
-    <button class="nav-btn active" id="nav-home" onclick="App.setTab('home')">
-      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-      Inicio
-    </button>
     <button class="nav-btn" id="nav-daily" onclick="App.setTab('daily')">
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
       Gastos
@@ -509,6 +510,10 @@
     <button class="nav-btn" id="nav-projects" onclick="App.setTab('projects')">
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
       Proyectos
+    </button>
+    <button class="nav-btn" id="nav-shared" onclick="App.setTab('shared')">
+      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
+      Compartidos
     </button>
   </nav>
 </div>
@@ -660,7 +665,8 @@ const App = (() => {
     projects:     [],   // [{id, item, amount, date}]
     trash:        [],   // movimientos eliminados (soft delete)
     username:     '',
-    darkMode:     false
+    darkMode:     false,
+    shared:       []    // [{id, name, totalAmount, myPercent, myAmount, assignedAs, assignedId, createdAt}]
   };
 
   // ── Persistencia ──────────────────────────────────────────────────
@@ -681,6 +687,7 @@ const App = (() => {
       state.trash         = d.trash         || [];
       state.username      = d.username      || '';
       state.darkMode      = d.darkMode      || false;
+      state.shared        = d.shared        || [];
       if (state.darkMode) document.body.classList.add('dark');
     } catch {}
   }
@@ -692,7 +699,7 @@ const App = (() => {
       suggestions: state.suggestions, savingsCats: state.savingsCats,
       movCats: state.movCats, fixedCats: state.fixedCats,
       projects: state.projects, trash: state.trash, username: state.username,
-      darkMode: state.darkMode
+      darkMode: state.darkMode, shared: state.shared
     }));
   }
 
@@ -958,13 +965,16 @@ const App = (() => {
   // ── Tabs ──────────────────────────────────────────────────────────
   function setTab(tab) {
     state.tab=tab;
-    document.getElementById('nav-home').className      = 'nav-btn'+(tab==='home'      ?' active':'');
     document.getElementById('nav-daily').className     = 'nav-btn'+(tab==='daily'     ?' active-daily':'');
     document.getElementById('nav-fixed').className     = 'nav-btn'+(tab==='fixed'     ?' active-fixed':'');
     document.getElementById('nav-movements').className = 'nav-btn'+(tab==='movements' ?' active-hist':'');
     document.getElementById('nav-savings').className   = 'nav-btn'+(tab==='savings'   ?' active-savings':'');
     document.getElementById('nav-projects').className  = 'nav-btn'+(tab==='projects'  ?' active-projects':'');
+    document.getElementById('nav-shared').className    = 'nav-btn'+(tab==='shared'    ?' active-shared':'');
     document.getElementById('btn-settings-header').className = 'btn-eye-header'+(tab==='settings' ?' active-settings':'');
+    // Resumen chip: visible cuando no estás en home
+    const chip = document.getElementById('resumen-chip');
+    if(chip) chip.style.opacity = tab==='home' ? '0' : '0.7';
     render();
   }
 
@@ -1074,6 +1084,7 @@ const App = (() => {
     else if (state.tab==='savings')   el.innerHTML = renderSavingsTab(mk);
     else if (state.tab==='projects')  el.innerHTML = renderProyectos();
     else if (state.tab==='settings')  el.innerHTML = renderSettings();
+    else if (state.tab==='shared')    el.innerHTML = renderCompartidos();
 
     // Header username
     const hu = document.getElementById('header-username');
@@ -1579,6 +1590,172 @@ const App = (() => {
     `;
   }
 
+  // ── Compartidos ──────────────────────────────────────────────────────
+  function addShared() {
+    const nameEl    = document.getElementById('sh-name');
+    const totalEl   = document.getElementById('sh-total');
+    const pctEl     = document.getElementById('sh-pct');
+    const assignEl  = document.getElementById('sh-assign');
+    const catEl     = document.getElementById('sh-cat');
+    const name      = (nameEl?.value||'').trim();
+    const total     = parseFloat(totalEl?.value);
+    const pct       = parseFloat(pctEl?.value);
+    const assignedAs= assignEl?.value || 'fixed';
+    const cat       = catEl?.value || '';
+    if(!name)           { toast('Ingresa un nombre'); return; }
+    if(!total||total<=0){ toast('Ingresa el monto total'); return; }
+    if(!pct||pct<=0||pct>100){ toast('El porcentaje debe ser entre 1 y 100'); return; }
+    const myAmount = Math.round(total * pct / 100);
+    const id = 'sh'+Date.now();
+    let assignedId = null;
+    if(assignedAs==='fixed') {
+      const fid = 'f'+Date.now();
+      state.fixedExpenses.push({id:fid, item:name, amount:myAmount, category:cat});
+      assignedId = fid;
+    } else {
+      const mk = activeMk();
+      const mid = 'm'+Date.now();
+      state.movements.push({id:mid, item:name, amount:myAmount, category:cat, date:mk+'-01'});
+      assignedId = mid;
+    }
+    state.shared.push({id, name, totalAmount:total, myPercent:pct, myAmount, assignedAs, assignedId, createdAt:new Date().toISOString()});
+    save(); render(); toast(`"${name}" agregado · Mi parte: ${disp(myAmount)}`);
+  }
+
+  function deleteShared(id) {
+    const s = state.shared.find(s=>s.id===id);
+    if(!s) return;
+    // Eliminar también de fixed o movements
+    if(s.assignedAs==='fixed')    state.fixedExpenses = state.fixedExpenses.filter(f=>f.id!==s.assignedId);
+    else                          state.movements      = state.movements.filter(m=>m.id!==s.assignedId);
+    state.shared = state.shared.filter(s=>s.id!==id);
+    save(); render(); toast('Eliminado');
+  }
+
+  function generateShareCode(id) {
+    const s = state.shared.find(s=>s.id===id);
+    if(!s) return;
+    const theirPct = Math.round(100 - s.myPercent);
+    const theirAmt = Math.round(s.totalAmount * theirPct / 100);
+    const payload = { v:1, name:s.name, total:s.totalAmount, pct:theirPct, amt:theirAmt };
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    // Copiar al portapapeles
+    if(navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(()=>toast('Código copiado — pégalo en WhatsApp ✓')).catch(()=>_showCode(code));
+    } else { _showCode(code); }
+  }
+
+  function _showCode(code) {
+    const el = document.getElementById('sh-code-out');
+    if(el){ el.value=code; el.select(); toast('Selecciona el código y cópialo'); }
+  }
+
+  function importSharedCode() {
+    const el = document.getElementById('sh-import-input');
+    const raw = (el?.value||'').trim();
+    if(!raw){ toast('Pega un código primero'); return; }
+    try {
+      const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
+      if(!payload.v||!payload.name||!payload.total){ toast('Código inválido'); return; }
+      // Pre-llenar el formulario con los datos
+      const nameEl  = document.getElementById('sh-name');
+      const totalEl = document.getElementById('sh-total');
+      const pctEl   = document.getElementById('sh-pct');
+      const myAmt   = document.getElementById('sh-myamt');
+      if(nameEl)  nameEl.value  = payload.name;
+      if(totalEl) totalEl.value = payload.total;
+      if(pctEl)   pctEl.value   = payload.pct;
+      if(myAmt)   myAmt.textContent   = disp(payload.amt);
+      if(el)      el.value      = '';
+      toast(`"${payload.name}" importado — revisa y guarda`);
+    } catch { toast('Código inválido o corrupto'); }
+  }
+
+  function updateMyAmount() {
+    const total = parseFloat(document.getElementById('sh-total')?.value||0);
+    const pct   = parseFloat(document.getElementById('sh-pct')?.value||0);
+    const el    = document.getElementById('sh-myamt');
+    if(el) el.textContent = (total>0&&pct>0) ? disp(Math.round(total*pct/100)) : '—';
+  }
+
+  function renderCompartidos() {
+    const cats = [...(state.fixedCats||DEFAULT_FIXED_CATS), ...(state.movCats||DEFAULT_MOV_CATS)];
+    const uniqueCats = [...new Set(cats)];
+    const catOpts = uniqueCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+    let list = '';
+    if(!state.shared.length) {
+      list = `<div class="empty-state"><p>Sin gastos compartidos aún.<br>Agrega un gasto que divides con alguien.</p></div>`;
+    } else {
+      state.shared.forEach(s=>{
+        const typeLbl = s.assignedAs==='fixed'
+          ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
+          : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
+        list += `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="movement-name">${esc(s.name)}</div>
+              <div style="display:flex;gap:6px;margin-top:3px;align-items:center">${typeLbl}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="movement-amount">${disp(s.myAmount)}</div>
+              <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${disp(s.totalAmount)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;border-top:1px solid var(--border)">
+            <button onclick="App.generateShareCode('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid #0891b2;border-radius:7px;background:none;color:#0891b2;cursor:pointer;font-family:inherit">📤 Compartir código</button>
+            <button onclick="App.deleteShared('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid var(--danger);border-radius:7px;background:none;color:var(--danger);cursor:pointer;font-family:inherit">Eliminar</button>
+          </div>
+        </div>`;
+      });
+    }
+
+    return `
+      <div style="padding:16px 16px 0">
+        <div class="form-card" style="border-left:4px solid #0891b2">
+          <div class="form-title" style="color:#0891b2">➕ Agregar gasto compartido</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div><label>Nombre del gasto</label>
+              <input type="text" id="sh-name" placeholder="Ej: Arriendo, Netflix..." maxlength="60" autocorrect="off" spellcheck="false"/></div>
+            <div><label>Monto TOTAL del gasto</label>
+              <input type="number" id="sh-total" placeholder="Ej: 1000000" min="0" step="any" inputmode="decimal" oninput="App.updateMyAmount()"/></div>
+            <div><label>Mi porcentaje (%)</label>
+              <input type="number" id="sh-pct" placeholder="Ej: 50" min="1" max="100" step="any" inputmode="decimal" oninput="App.updateMyAmount()"/></div>
+            <div style="background:var(--bg);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:.82rem;color:var(--text-2);font-weight:600">Mi parte a pagar</span>
+              <span id="sh-myamt" style="font-size:1.1rem;font-weight:800;color:#0891b2">—</span>
+            </div>
+            <div><label>Asignar como</label>
+              <select id="sh-assign" class="cat-select">
+                <option value="fixed">Gasto Fijo (mensual recurrente)</option>
+                <option value="monthly">Gasto del mes (único)</option>
+              </select></div>
+            <div><label>Categoría</label>
+              <select id="sh-cat" class="cat-select"><option value="">Sin categoría</option>${catOpts}</select></div>
+            <button onclick="App.addShared()" style="width:100%;padding:13px;background:#0891b2;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit">+ Agregar gasto compartido</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px 0">
+        <div class="sc-card" style="border:1.5px solid #bae6fd">
+          <div style="padding:12px 14px">
+            <p style="font-size:.72rem;font-weight:700;color:#0891b2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📥 Importar código de otro usuario</p>
+            <textarea id="sh-import-input" rows="2" placeholder="Pega aquí el código que te enviaron..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 11px;font-size:.82rem;font-family:inherit;background:var(--card);color:var(--text);resize:none"></textarea>
+            <button onclick="App.importSharedCode()" style="width:100%;margin-top:8px;padding:10px;background:#ecfeff;color:#0891b2;border:1.5px solid #0891b2;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Importar y pre-llenar formulario</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px 24px">
+        <p style="font-size:.68rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mis gastos compartidos (${state.shared.length})</p>
+        ${list}
+      </div>
+
+      <textarea id="sh-code-out" style="position:absolute;left:-9999px;top:0" readonly></textarea>
+    `;
+  }
+
   // ── Bind forms ────────────────────────────────────────────────────
   function bindForms() {
     const df=document.getElementById('expense-form');
@@ -1662,7 +1839,8 @@ const App = (() => {
     addProjectUI, deleteProject,
     editMovement, saveEditMovement, cancelEditMovement,
     permanentDeleteMovement, restoreMovement,
-    toggleDark
+    toggleDark,
+    addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount
   };
 })();
 
