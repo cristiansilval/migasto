@@ -634,6 +634,7 @@ const App = (() => {
 
   let _openSections      = new Set(); // collapsible section state (not persisted)
   let _fixedCurrency     = 'CLP';    // currency selector in fixed form (not persisted)
+  let _sharedCurrency    = 'CLP';    // currency selector in shared form (not persisted)
   let _editingMovement   = null;     // id del movimiento en edición
   let _ufCache       = null;     // { rate, date }
 
@@ -893,6 +894,13 @@ const App = (() => {
 
   function setFixedCurrency(cur) {
     _fixedCurrency = cur;
+    if (cur==='UF') {
+      fetchUF().then(rate=>{ if(rate) render(); else toast('Sin conexión para obtener UF'); });
+    }
+    render();
+  }
+  function setSharedCurrency(cur) {
+    _sharedCurrency = cur;
     if (cur==='UF') {
       fetchUF().then(rate=>{ if(rate) render(); else toast('Sin conexión para obtener UF'); });
     }
@@ -1591,21 +1599,30 @@ const App = (() => {
   }
 
   // ── Compartidos ──────────────────────────────────────────────────────
-  function addShared() {
+  async function addShared() {
     const nameEl    = document.getElementById('sh-name');
     const totalEl   = document.getElementById('sh-total');
     const pctEl     = document.getElementById('sh-pct');
     const assignEl  = document.getElementById('sh-assign');
     const catEl     = document.getElementById('sh-cat');
     const name      = (nameEl?.value||'').trim();
-    const total     = parseFloat(totalEl?.value);
+    const rawTotal  = parseFloat(totalEl?.value);
     const pct       = parseFloat(pctEl?.value);
     const assignedAs= assignEl?.value || 'fixed';
     const cat       = catEl?.value || '';
-    if(!name)           { toast('Ingresa un nombre'); return; }
-    if(!total||total<=0){ toast('Ingresa el monto total'); return; }
+    if(!name)              { toast('Ingresa un nombre'); return; }
+    if(!rawTotal||rawTotal<=0){ toast('Ingresa el monto total'); return; }
     if(!pct||pct<=0||pct>100){ toast('El porcentaje debe ser entre 1 y 100'); return; }
-    const myAmount = Math.round(total * pct / 100);
+
+    let totalCLP = rawTotal, currency = 'CLP', ufTotal = null, ufRate = null;
+    if (_sharedCurrency === 'UF') {
+      const rate = await fetchUF();
+      if(!rate){ toast('No se pudo obtener el valor UF. Intenta de nuevo.'); return; }
+      totalCLP = Math.round(rawTotal * rate);
+      currency = 'UF'; ufTotal = rawTotal; ufRate = rate;
+    }
+
+    const myAmount = Math.round(totalCLP * pct / 100);
     const id = 'sh'+Date.now();
     let assignedId = null;
     if(assignedAs==='fixed') {
@@ -1618,8 +1635,16 @@ const App = (() => {
       state.movements.push({id:mid, item:name, amount:myAmount, category:cat, date:mk+'-01'});
       assignedId = mid;
     }
-    state.shared.push({id, name, totalAmount:total, myPercent:pct, myAmount, assignedAs, assignedId, createdAt:new Date().toISOString()});
-    save(); render(); toast(`"${name}" agregado · Mi parte: ${disp(myAmount)}`);
+    state.shared.push({
+      id, name, totalAmount:totalCLP, myPercent:pct, myAmount,
+      assignedAs, assignedId, createdAt:new Date().toISOString(),
+      currency, ufTotal, ufRate
+    });
+    save(); render();
+    const msg = currency==='UF'
+      ? `"${name}" · ${rawTotal} UF = ${disp(myAmount)}`
+      : `"${name}" agregado · Mi parte: ${disp(myAmount)}`;
+    toast(msg);
   }
 
   function deleteShared(id) {
@@ -1637,7 +1662,13 @@ const App = (() => {
     if(!s) return;
     const theirPct = Math.round(100 - s.myPercent);
     const theirAmt = Math.round(s.totalAmount * theirPct / 100);
-    const payload = { v:1, name:s.name, total:s.totalAmount, pct:theirPct, amt:theirAmt };
+    const payload = {
+      v:1, name:s.name, total:s.totalAmount, pct:theirPct, amt:theirAmt,
+      ...(s.currency==='UF' && s.ufTotal ? {
+        currency:'UF', ufTotal:s.ufTotal, ufRate:s.ufRate,
+        ufAmt: Math.round(s.ufTotal * theirPct / 100 * 100) / 100
+      } : {})
+    };
     const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     // Copiar al portapapeles
     if(navigator.clipboard) {
@@ -1675,10 +1706,22 @@ const App = (() => {
     const total = parseFloat(document.getElementById('sh-total')?.value||0);
     const pct   = parseFloat(document.getElementById('sh-pct')?.value||0);
     const el    = document.getElementById('sh-myamt');
-    if(el) el.textContent = (total>0&&pct>0) ? disp(Math.round(total*pct/100)) : '—';
+    if(!el) return;
+    if(!(total>0&&pct>0)){ el.innerHTML='—'; return; }
+    if(_sharedCurrency==='UF' && _ufCache) {
+      const myUF  = Math.round(total * pct / 100 * 100) / 100;
+      const myCLP = Math.round(myUF * _ufCache.rate);
+      el.innerHTML = `${myUF} UF <span style="font-size:.72rem;color:var(--text-2);font-weight:600">≈ ${disp(myCLP)}</span>`;
+    } else {
+      el.textContent = disp(Math.round(total*pct/100));
+    }
   }
 
   function renderCompartidos() {
+    const isUF   = _sharedCurrency === 'UF';
+    const ufNote = isUF && _ufCache
+      ? `<span style="font-size:.68rem;color:var(--text-2);margin-left:6px">1 UF = $${Math.round(_ufCache.rate).toLocaleString('es-CL')}</span>`
+      : '';
     const cats = [...(state.fixedCats||DEFAULT_FIXED_CATS), ...(state.movCats||DEFAULT_MOV_CATS)];
     const uniqueCats = [...new Set(cats)];
     const catOpts = uniqueCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
@@ -1698,8 +1741,10 @@ const App = (() => {
               <div style="display:flex;gap:6px;margin-top:3px;align-items:center">${typeLbl}</div>
             </div>
             <div style="text-align:right">
-              <div class="movement-amount">${disp(s.myAmount)}</div>
-              <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${disp(s.totalAmount)}</div>
+              <div class="movement-amount">${s.currency==='UF' && s.ufTotal ? `${Math.round(s.ufTotal*s.myPercent/100*100)/100} UF` : disp(s.myAmount)}</div>
+              ${s.currency==='UF' ? `<div style="font-size:.68rem;color:var(--text-2)">${disp(s.myAmount)}</div>` : ''}
+              <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${s.currency==='UF' && s.ufTotal ? `${s.ufTotal} UF` : disp(s.totalAmount)}</div>
+              ${s.currency==='UF' && s.ufRate ? `<div style="font-size:.6rem;color:var(--text-2);opacity:.7">UF al ${new Date(s.createdAt).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}: $${Math.round(s.ufRate).toLocaleString('es-CL')}</div>` : ''}
             </div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;border-top:1px solid var(--border)">
@@ -1717,8 +1762,13 @@ const App = (() => {
           <div style="display:flex;flex-direction:column;gap:10px">
             <div><label>Nombre del gasto</label>
               <input type="text" id="sh-name" placeholder="Ej: Arriendo, Netflix..." maxlength="60" autocorrect="off" spellcheck="false"/></div>
-            <div><label>Monto TOTAL del gasto</label>
-              <input type="number" id="sh-total" placeholder="Ej: 1000000" min="0" step="any" inputmode="decimal" oninput="App.updateMyAmount()"/></div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <label style="margin:0">Monto TOTAL del gasto${ufNote}</label>
+                <button type="button" onclick="App.setSharedCurrency('${isUF?'CLP':'UF'}')" style="font-size:.65rem;padding:3px 9px;border:1.5px solid ${isUF?'var(--fixed)':'var(--border)'};border-radius:6px;background:${isUF?'var(--fixed-light)':'var(--bg)'};color:${isUF?'var(--fixed)':'var(--text-2)'};cursor:pointer;font-family:inherit;font-weight:700">${isUF?'UF ✓':'UF'}</button>
+              </div>
+              <input type="number" id="sh-total" placeholder="${isUF?'Ej: 12.5':'Ej: 1000000'}" min="0" step="any" inputmode="decimal" oninput="App.updateMyAmount()"/>
+            </div>
             <div><label>Mi porcentaje (%)</label>
               <input type="number" id="sh-pct" placeholder="Ej: 50" min="1" max="100" step="any" inputmode="decimal" oninput="App.updateMyAmount()"/></div>
             <div style="background:var(--bg);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
@@ -1840,7 +1890,7 @@ const App = (() => {
     editMovement, saveEditMovement, cancelEditMovement,
     permanentDeleteMovement, restoreMovement,
     toggleDark,
-    addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount
+    addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount, setSharedCurrency
   };
 })();
 

@@ -1,4 +1,4 @@
-const CACHE = 'migasto-v202605162121';
+const CACHE = 'migasto-v202605162130';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
