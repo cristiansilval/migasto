@@ -57,48 +57,6 @@
 
     html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 
-    /* ═══ LOCK SCREEN ═══════════════════════════════════════════════ */
-    #lock-screen {
-      position: fixed; inset: 0; z-index: 999;
-      background: linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 100%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 32px 28px; color: #fff; gap: 0;
-    }
-    .lock-app-name { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
-    .lock-subtitle { font-size: .88rem; opacity: .7; margin-bottom: 36px; text-align: center; line-height: 1.4; }
-    .lock-fp-btn {
-      background: rgba(255,255,255,.15); border: 2px solid rgba(255,255,255,.3);
-      border-radius: 50%; width: 110px; height: 110px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; color: #fff; transition: background .2s, transform .1s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .lock-fp-btn:active { transform: scale(.94); background: rgba(255,255,255,.25); }
-    .lock-fp-btn.pulse  { animation: fpPulse .6s ease; }
-    .lock-fp-btn.error  { border-color: #fca5a5; background: rgba(239,68,68,.2); animation: shake .4s ease; }
-    @keyframes fpPulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}70%{box-shadow:0 0 0 20px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)} }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-    .lock-hint { font-size: .8rem; opacity: .65; margin-top: 18px; }
-    .lock-skip { margin-top: 28px; background: none; border: none; color: rgba(255,255,255,.5); font-size: .82rem; cursor: pointer; text-decoration: underline; font-family: inherit; }
-    .lock-setup-card { background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.2); border-radius: var(--radius); padding: 26px 22px; text-align: center; width: 100%; max-width: 320px; }
-    .lock-setup-card h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
-    .lock-setup-card p  { font-size: .85rem; opacity: .8; margin-bottom: 22px; line-height: 1.5; }
-    .btn-lock-primary   { width: 100%; padding: 14px; background: #fff; color: var(--brand-dark); border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 10px; -webkit-tap-highlight-color: transparent; }
-    .btn-lock-secondary { width: 100%; padding: 12px; background: none; border: 1.5px solid rgba(255,255,255,.35); color: rgba(255,255,255,.85); border-radius: var(--radius-sm); font-size: .92rem; font-weight: 600; cursor: pointer; font-family: inherit; margin-bottom: 10px; -webkit-tap-highlight-color: transparent; }
-    .btn-lock-ghost     { width: 100%; padding: 9px; background: none; border: none; color: rgba(255,255,255,.45); font-size: .8rem; cursor: pointer; font-family: inherit; text-decoration: underline; }
-
-    /* PIN pad */
-    .pin-dots-wrap { display: flex; gap: 18px; margin-bottom: 32px; }
-    .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); transition: background .12s, transform .1s; }
-    .pin-dot.filled { background: #fff; border-color: #fff; transform: scale(1.1); }
-    .pin-dot.shake  { animation: shake .35s ease; }
-    .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 270px; }
-    .pin-key { height: 70px; border-radius: 50%; border: none; background: rgba(255,255,255,.14); color: #fff; font-size: 1.5rem; font-weight: 600; cursor: pointer; transition: background .1s, transform .08s; -webkit-tap-highlight-color: transparent; font-family: inherit; display: flex; align-items: center; justify-content: center; }
-    .pin-key:active { background: rgba(255,255,255,.3); transform: scale(.9); }
-    .pin-key.pin-empty { background: none; pointer-events: none; }
-    .pin-key.pin-del   { font-size: 1.25rem; }
-    .pin-msg { font-size: .82rem; margin-top: 14px; min-height: 18px; color: #fca5a5; font-weight: 600; }
-
     /* ── Update notice en Ajustes ── */
     .update-notice { background: #d1fae5; border: 1.5px solid #6ee7b7; border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .update-notice-txt { font-size: .85rem; font-weight: 600; color: #065f46; }
@@ -348,11 +306,6 @@
     .btn-settings-save:active { opacity: .85; }
     .btn-settings-save.success-bg { background: var(--success); }
 
-    /* Auth type picker */
-    .auth-type-row { display: flex; gap: 8px; }
-    .auth-type-btn { flex: 1; padding: 11px 8px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text-2); font-size: .83rem; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: border-color .15s, color .15s, background .15s; -webkit-tap-highlight-color: transparent; }
-    .auth-type-btn.selected { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
-
     /* Income items list */
     .income-item-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
     .income-item-lbl { flex: 1; font-size: .88rem; font-weight: 600; }
@@ -362,17 +315,6 @@
     /* Settings section label */
     .settings-section-lbl { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); font-weight: 700; padding: 0 2px; }
 
-    /* PIN setup inline */
-    .pin-inline-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0 2px; }
-    .pin-inline-dots { display: flex; gap: 14px; }
-    .pin-inline-dot  { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: background .1s; }
-    .pin-inline-dot.filled { background: var(--brand); border-color: var(--brand); }
-    .pin-inline-pad  { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; width: 240px; }
-    .pin-inline-key  { height: 56px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 1.3rem; font-weight: 600; cursor: pointer; transition: background .1s; -webkit-tap-highlight-color: transparent; font-family: inherit; display: flex; align-items: center; justify-content: center; }
-    .pin-inline-key:active { background: var(--border); }
-    .pin-inline-key.pin-empty { background: none; border-color: transparent; pointer-events: none; }
-    .pin-inline-msg  { font-size: .8rem; color: var(--danger); font-weight: 600; min-height: 16px; }
-
     /* App version */
     .app-version { text-align: center; font-size: .68rem; color: #cbd5e1; padding: 2px 0 4px; letter-spacing: .05em; }
 
@@ -380,92 +322,6 @@
   </style>
 </head>
 <body>
-
-<!-- ═══ LOCK SCREEN ═══════════════════════════════════════════════════ -->
-<div id="lock-screen" class="hidden">
-
-  <!-- Setup: primera vez — solo biometría -->
-  <div id="lock-setup" class="hidden">
-    <p class="lock-app-name">MiGasto</p>
-    <p class="lock-subtitle">Protege tu información personal</p>
-    <div class="lock-setup-card">
-      <h2>Activa tu huella o Face ID</h2>
-      <p>MiGasto requiere verificación biométrica para proteger tus datos.</p>
-      <button class="btn-lock-primary" id="btn-setup-bio">Activar Huella / Face ID</button>
-      <p class="lock-hint" id="setup-bio-msg" style="margin-top:14px;min-height:18px"></p>
-    </div>
-  </div>
-
-  <!-- Setup PIN: ingresar y confirmar PIN -->
-  <div id="lock-setup-pin" class="hidden">
-    <p class="lock-app-name">MiGasto</p>
-    <p class="lock-subtitle" id="setup-pin-subtitle">Crea tu PIN de 4 dígitos</p>
-    <div class="pin-dots-wrap" id="setup-pin-dots">
-      <span class="pin-dot" id="spd0"></span>
-      <span class="pin-dot" id="spd1"></span>
-      <span class="pin-dot" id="spd2"></span>
-      <span class="pin-dot" id="spd3"></span>
-    </div>
-    <div class="pin-pad" id="setup-pin-pad">
-      <button class="pin-key" data-d="1">1</button>
-      <button class="pin-key" data-d="2">2</button>
-      <button class="pin-key" data-d="3">3</button>
-      <button class="pin-key" data-d="4">4</button>
-      <button class="pin-key" data-d="5">5</button>
-      <button class="pin-key" data-d="6">6</button>
-      <button class="pin-key" data-d="7">7</button>
-      <button class="pin-key" data-d="8">8</button>
-      <button class="pin-key" data-d="9">9</button>
-      <span  class="pin-key pin-empty"></span>
-      <button class="pin-key" data-d="0">0</button>
-      <button class="pin-key pin-del" id="setup-pin-del">⌫</button>
-    </div>
-    <p class="pin-msg" id="setup-pin-msg"></p>
-    <button class="lock-skip" id="btn-back-setup">← Volver</button>
-  </div>
-
-  <!-- Auth: huella -->
-  <div id="lock-auth" class="hidden">
-    <p class="lock-app-name">MiGasto</p>
-    <p class="lock-subtitle">Verifica tu identidad para continuar</p>
-    <button class="lock-fp-btn" id="btn-authenticate">
-      <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268"/>
-        <path d="M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565"/>
-        <path d="M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
-      </svg>
-    </button>
-    <p class="lock-hint">Toca para desbloquear</p>
-  </div>
-
-  <!-- Auth: PIN -->
-  <div id="lock-pin-auth" class="hidden">
-    <p class="lock-app-name">MiGasto</p>
-    <p class="lock-subtitle">Ingresa tu PIN</p>
-    <div class="pin-dots-wrap" id="auth-pin-dots">
-      <span class="pin-dot" id="apd0"></span>
-      <span class="pin-dot" id="apd1"></span>
-      <span class="pin-dot" id="apd2"></span>
-      <span class="pin-dot" id="apd3"></span>
-    </div>
-    <div class="pin-pad" id="auth-pin-pad">
-      <button class="pin-key" data-d="1">1</button>
-      <button class="pin-key" data-d="2">2</button>
-      <button class="pin-key" data-d="3">3</button>
-      <button class="pin-key" data-d="4">4</button>
-      <button class="pin-key" data-d="5">5</button>
-      <button class="pin-key" data-d="6">6</button>
-      <button class="pin-key" data-d="7">7</button>
-      <button class="pin-key" data-d="8">8</button>
-      <button class="pin-key" data-d="9">9</button>
-      <span  class="pin-key pin-empty"></span>
-      <button class="pin-key" data-d="0">0</button>
-      <button class="pin-key pin-del" id="auth-pin-del">⌫</button>
-    </div>
-    <p class="pin-msg" id="auth-pin-msg"></p>
-  </div>
-
-</div>
 
 <!-- ═══ APP ═══════════════════════════════════════════════════════════ -->
 <div id="app">
@@ -552,74 +408,6 @@ const SVG = {
   edit:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
 };
 
-// ══ BIOMETRÍA + PIN ══════════════════════════════════════════════════
-const Auth = (() => {
-  const CRED_KEY    = 'migasto_credId';
-  const BIO_KEY     = 'migasto_biometric';
-  const PIN_KEY     = 'migasto_pin';
-  const TYPE_KEY    = 'migasto_authType';  // 'bio' | 'pin'
-  const SKIPPED_KEY = 'migasto_authSkipped';
-
-  async function isSupported() {
-    try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }
-    catch { return false; }
-  }
-  function isEnabled()    { return localStorage.getItem(BIO_KEY) === 'true' || !!localStorage.getItem(PIN_KEY); }
-  function isBioEnabled() { return localStorage.getItem(BIO_KEY) === 'true'; }
-  function isPinEnabled() { return !!localStorage.getItem(PIN_KEY); }
-  function getAuthType()  { return localStorage.getItem(TYPE_KEY) || 'bio'; }
-  function wasSkipped()   { return localStorage.getItem(SKIPPED_KEY) === 'true'; }
-  function setSkipped()   { localStorage.setItem(SKIPPED_KEY, 'true'); }
-
-  async function registerBio() {
-    try {
-      const cred = await navigator.credentials.create({ publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'MiGasto', id: location.hostname || 'localhost' },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'migasto-user', displayName: 'MiGasto' },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
-        timeout: 60000
-      }});
-      localStorage.setItem(CRED_KEY, btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
-      localStorage.setItem(BIO_KEY,  'true');
-      localStorage.setItem(TYPE_KEY, 'bio');
-      return true;
-    } catch { return false; }
-  }
-
-  async function authenticateBio() {
-    const credId = localStorage.getItem(CRED_KEY);
-    if (!credId) return false;
-    try {
-      const result = await navigator.credentials.get({ publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rpId: location.hostname || 'localhost',
-        allowCredentials: [{ id: Uint8Array.from(atob(credId), c => c.charCodeAt(0)), type: 'public-key' }],
-        userVerification: 'required', timeout: 60000
-      }});
-      return !!result;
-    } catch { return false; }
-  }
-
-  function setupPin(pin) {
-    localStorage.setItem(PIN_KEY,  pin);
-    localStorage.setItem(TYPE_KEY, 'pin');
-    // Clear bio
-    localStorage.removeItem(BIO_KEY);
-    localStorage.removeItem(CRED_KEY);
-  }
-
-  function verifyPin(pin) { return localStorage.getItem(PIN_KEY) === pin; }
-
-  function clearAuth() {
-    [CRED_KEY, BIO_KEY, PIN_KEY, TYPE_KEY, SKIPPED_KEY].forEach(k => localStorage.removeItem(k));
-  }
-
-  return { isSupported, isEnabled, isBioEnabled, isPinEnabled, getAuthType, wasSkipped, setSkipped,
-           registerBio, authenticateBio, setupPin, verifyPin, clearAuth };
-})();
-
 // ══ APP ══════════════════════════════════════════════════════════════
 const App = (() => {
   const KEY = 'migasto_v1';
@@ -663,32 +451,34 @@ const App = (() => {
     savingsCats:  null, // categorías de ahorro personalizables
     movCats:      null, // categorías gastos del mes
     fixedCats:    null, // categorías gastos fijos
-    projects:     [],   // [{id, item, amount, date}]
-    trash:        [],   // movimientos eliminados (soft delete)
-    username:     '',
-    darkMode:     false,
-    shared:       []    // [{id, name, totalAmount, myPercent, myAmount, assignedAs, assignedId, createdAt}]
+    projects:        [],   // [{id, item, amount, date}]
+    trash:           [],   // movimientos eliminados (soft delete)
+    username:        '',
+    darkMode:        false,
+    shared:          [],   // [{id, name, totalAmount, myPercent, myAmount, assignedAs, assignedId, createdAt}]
+    fixedSnapshots:  {}    // {'2026-05': [{id, item, amount, category, currency?, ufAmount?, ufRate?}]}
   };
 
   // ── Persistencia ──────────────────────────────────────────────────
   function load() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
-      state.movements     = d.movements     || [];
-      state.fixedExpenses = d.fixedExpenses || [];
-      state.incomeItems   = d.incomeItems   || [];
-      state.savings       = d.savings       || [];
-      state.income        = d.income        || 0;
-      state.showAmounts   = d.showAmounts   !== false;
-      state.suggestions   = d.suggestions   || DEFAULT_SUGGESTIONS.slice();
-      state.savingsCats   = d.savingsCats   || DEFAULT_SAV_CATS.slice();
-      state.movCats       = d.movCats       || DEFAULT_MOV_CATS.slice();
-      state.fixedCats     = d.fixedCats     || DEFAULT_FIXED_CATS.slice();
-      state.projects      = d.projects      || [];
-      state.trash         = d.trash         || [];
-      state.username      = d.username      || '';
-      state.darkMode      = d.darkMode      || false;
-      state.shared        = d.shared        || [];
+      state.movements      = d.movements      || [];
+      state.fixedExpenses  = d.fixedExpenses  || [];
+      state.incomeItems    = d.incomeItems    || [];
+      state.savings        = d.savings        || [];
+      state.income         = d.income         || 0;
+      state.showAmounts    = false; // always start hidden
+      state.suggestions    = d.suggestions    || DEFAULT_SUGGESTIONS.slice();
+      state.savingsCats    = d.savingsCats    || DEFAULT_SAV_CATS.slice();
+      state.movCats        = d.movCats        || DEFAULT_MOV_CATS.slice();
+      state.fixedCats      = d.fixedCats      || DEFAULT_FIXED_CATS.slice();
+      state.projects       = d.projects       || [];
+      state.trash          = d.trash          || [];
+      state.username       = d.username       || '';
+      state.darkMode       = d.darkMode       || false;
+      state.shared         = d.shared         || [];
+      state.fixedSnapshots = d.fixedSnapshots || {};
       if (state.darkMode) document.body.classList.add('dark');
     } catch {}
   }
@@ -696,11 +486,12 @@ const App = (() => {
     localStorage.setItem(KEY, JSON.stringify({
       movements: state.movements, fixedExpenses: state.fixedExpenses,
       incomeItems: state.incomeItems, savings: state.savings,
-      income: state.income, showAmounts: state.showAmounts,
+      income: state.income,
       suggestions: state.suggestions, savingsCats: state.savingsCats,
       movCats: state.movCats, fixedCats: state.fixedCats,
       projects: state.projects, trash: state.trash, username: state.username,
-      darkMode: state.darkMode, shared: state.shared
+      darkMode: state.darkMode, shared: state.shared,
+      fixedSnapshots: state.fixedSnapshots
     }));
   }
 
@@ -928,7 +719,7 @@ const App = (() => {
     save(); render();
   }
   function setIncome(v)     { state.income=Number(v); save(); render(); }
-  function toggleAmounts()  { state.showAmounts=!state.showAmounts; save(); render(); }
+  function toggleAmounts()  { state.showAmounts=!state.showAmounts; render(); }
   function toggleDark()     { state.darkMode=!state.darkMode; document.body.classList.toggle('dark', state.darkMode); save(); render(); }
   function goMonth(d)       { state.currentMonth=shiftMonth(activeMk(),d); render(); }
   function jumpToMonth()    {
@@ -1031,6 +822,14 @@ const App = (() => {
     ).join('');
   }
 
+  // ── Fixed Snapshots ───────────────────────────────────────────────
+  function takeFixedSnapshot(mk) {
+    if (!state.fixedSnapshots[mk]) {
+      state.fixedSnapshots[mk] = state.fixedExpenses.map(f => ({...f}));
+      save();
+    }
+  }
+
   // ── Auth settings ─────────────────────────────────────────────────
   function addSavingsCatUI() {
     const el = document.getElementById('new-sav-cat');
@@ -1066,19 +865,10 @@ const App = (() => {
   }
   function deleteFixedCat(idx) { state.fixedCats.splice(idx,1); save(); render(); }
 
-  function resetAuth() {
-    if (!confirm('¿Cambiar método de acceso? Deberás configurarlo de nuevo al reabrir la app.')) return;
-    Auth.clearAuth();
-    toast('Método reiniciado — reinicia la app');
-    setTimeout(()=>location.reload(), 1500);
-  }
-  function setupPinInline() {
-    // Handled by the inline PIN pad in settings
-  }
-
   // ══ RENDER ═══════════════════════════════════════════════════════
   function render() {
     const mk  = activeMk();
+    takeFixedSnapshot(mk);
     const gt  = grandTotal(mk);
     const dt  = dailyTotal(mk);
     const ft  = fixedTotal();
@@ -1106,9 +896,17 @@ const App = (() => {
 
   // ── Inicio ────────────────────────────────────────────────────────
   function renderHome(gt,dt,ft,pct,mk) {
+    const totalSavings = state.savings.reduce((a,s)=>a+s.amount, 0);
+    const savingsBlock = totalSavings > 0
+      ? `<div style="background:var(--card);border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+          <span style="font-size:.88rem;font-weight:600;color:var(--success)">🏦 Total ahorrado</span>
+          <span style="font-size:1.1rem;font-weight:800;color:var(--success)">${disp(totalSavings)}</span>
+        </div>`
+      : '';
     return renderBalanceCard(gt,dt,ft,pct,mk)
       + renderAlert(pct)
       + renderCategoryKPI(mk)
+      + savingsBlock
       + renderProyectosDelMes(mk)
       + `<p class="app-version">MiGasto v${APP_VERSION}</p>`;
   }
@@ -1351,69 +1149,75 @@ const App = (() => {
 
   // ── Historial — resumen mensual sin navegación ────────────────────
   function renderHistorial() {
+    // Months detected ONLY from movements (not savings)
     const monthSet = new Set();
     state.movements.forEach(m=>monthSet.add(m.date.slice(0,7)));
-    state.savings.forEach(s=>monthSet.add(s.date.slice(0,7)));
     const months = Array.from(monthSet).sort().reverse();
 
-    const ft  = fixedTotal();
     const inc = totalIncome();
     let html  = '';
 
     if(!months.length) {
       html = `<div class="empty-state"><p>Aún no hay historial.<br>Los meses con movimientos aparecerán aquí.</p></div>`;
     } else {
-      months.forEach(mk=>{
-        const movs  = state.movements.filter(m=>m.date.startsWith(mk));
-        const savs  = state.savings.filter(s=>s.date.startsWith(mk));
-        const movT  = movs.reduce((s,m)=>s+m.amount,0);
-        const savT  = savs.reduce((s,v)=>s+v.amount,0);
-        const total = movT + ft;
-        const saldo = inc ? inc - total - savT : null;
+      // Group by year (Change 4)
+      const byYear = {};
+      months.forEach(mk => {
+        const yr = mk.slice(0,4);
+        if(!byYear[yr]) byYear[yr] = [];
+        byYear[yr].push(mk);
+      });
 
-        const itemRows = movs.map(m=>{
-          const c = catStyle(m.category);
-          if(_editingMovement===m.id) {
-            // Modo edición inline
-            return `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
-              <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off"
-                style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none;width:100%"/>
-              <div style="display:flex;gap:6px">
-                <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric"
-                  style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none"/>
-                <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
-                <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">✕</button>
+      Object.keys(byYear).sort().reverse().forEach(yr => {
+        html += `<div style="font-size:.72rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px">${yr}</div>`;
+
+        byYear[yr].forEach(mk => {
+          // Use snapshot for fixed expenses of that month (Change 2)
+          const fixedSnap = state.fixedSnapshots[mk] || [];
+          const ft = fixedSnap.reduce((s,f)=>s+f.amount, 0);
+
+          const movs  = state.movements.filter(m=>m.date.startsWith(mk));
+          const movT  = movs.reduce((s,m)=>s+m.amount,0);
+          const total = movT + ft;
+          const saldo = inc ? inc - total : null;
+
+          const itemRows = movs.map(m=>{
+            const c = catStyle(m.category);
+            if(_editingMovement===m.id) {
+              return `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
+                <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off"
+                  style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none;width:100%"/>
+                <div style="display:flex;gap:6px">
+                  <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric"
+                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none"/>
+                  <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                  <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">✕</button>
+                </div>
+              </div>`;
+            }
+            return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
+              <div style="flex:1;min-width:0">
+                <span style="font-size:.82rem;font-weight:600">${esc(m.item)}</span>
+                <span class="cat-badge" style="background:${c.bg};color:${c.color};margin-left:6px">${c.label}</span>
               </div>
+              <span style="font-size:.82rem;font-weight:700;white-space:nowrap">${disp(m.amount)}</span>
+              <button onclick="App.editMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
+              <button onclick="App.deleteMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:.95rem;padding:2px 5px;border-radius:5px;line-height:1" title="Eliminar">×</button>
             </div>`;
-          }
-          return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
-            <div style="flex:1;min-width:0">
-              <span style="font-size:.82rem;font-weight:600">${esc(m.item)}</span>
-              <span class="cat-badge" style="background:${c.bg};color:${c.color};margin-left:6px">${c.label}</span>
+          }).join('');
+
+          html += `<div class="balance-card" style="gap:0">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+              <p style="font-size:.85rem;font-weight:800;color:var(--text);text-transform:capitalize">${fmtMonthLabel(mk)}</p>
+              ${saldo!==null?`<span style="font-size:.72rem;color:var(--text-2)">Saldo: <strong style="color:${saldo>=0?'var(--success)':'var(--danger)'}">${disp(saldo)}</strong></span>`:''}
             </div>
-            <span style="font-size:.82rem;font-weight:700;white-space:nowrap">${disp(m.amount)}</span>
-            <button onclick="App.editMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
-            <button onclick="App.deleteMovement('${m.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:.95rem;padding:2px 5px;border-radius:5px;line-height:1" title="Eliminar">×</button>
+            <div class="balance-breakdown">
+              ${ft?`<div class="breakdown-row fixed-row"><span class="br-label">Gastos fijos</span><span class="br-val">${disp(ft)}</span></div>`:''}
+              ${movT?`<div class="breakdown-row daily-row"><span class="br-label">Gastos del mes</span><span class="br-val">${disp(movT)}</span></div>`:''}
+            </div>
+            <div style="margin-top:10px">${itemRows}</div>
           </div>`;
-        }).join('');
-
-        const savRows = savs.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:.82rem;font-weight:600;color:#065f46">💰 ${esc(s.item)}</span>
-          <span style="font-size:.82rem;font-weight:700;color:#065f46">${disp(s.amount)}</span>
-        </div>`).join('');
-
-        html += `<div class="balance-card" style="gap:0">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
-            <p style="font-size:.85rem;font-weight:800;color:var(--text);text-transform:capitalize">${fmtMonthLabel(mk)}</p>
-            ${saldo!==null?`<span style="font-size:.72rem;color:var(--text-2)">Saldo: <strong style="color:${saldo>=0?'var(--success)':'var(--danger)'}">${disp(saldo)}</strong></span>`:''}
-          </div>
-          <div class="balance-breakdown">
-            ${ft?`<div class="breakdown-row fixed-row"><span class="br-label">Gastos fijos</span><span class="br-val">${disp(ft)}</span></div>`:''}
-            ${movT?`<div class="breakdown-row daily-row"><span class="br-label">Gastos del mes</span><span class="br-val">${disp(movT)}</span></div>`:''}
-            ${savT?`<div class="breakdown-row" style="background:#d1fae5"><span class="br-label" style="color:#065f46">Ahorros</span><span class="br-val" style="color:#065f46">${disp(savT)}</span></div>`:''}
-          </div>
-          <div style="margin-top:10px">${itemRows}${savRows}</div>
-        </div>`;
+        });
       });
     }
 
@@ -1443,6 +1247,40 @@ const App = (() => {
       </div>`;
     }
 
+    // ── Gastos Compartidos (Change 5) ──
+    if(state.shared.length > 0) {
+      const sharedOpen = _openSections.has('sc-shared-hist');
+      const sharedItems = state.shared.map(s => {
+        const d = new Date(s.createdAt);
+        const dateStr = d.toLocaleDateString('es-CO', {day:'numeric', month:'short', year:'numeric'});
+        const theirAmt = s.totalAmount - s.myAmount;
+        const typeLbl = s.assignedAs==='fixed'
+          ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
+          : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
+        return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.85rem;font-weight:700">${esc(s.name)}</div>
+              <div style="font-size:.7rem;color:var(--text-2);margin-top:2px">${dateStr} · ${typeLbl}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:.82rem;font-weight:700">Total: ${disp(s.totalAmount)}</div>
+              <div style="font-size:.75rem;color:var(--text-2)">Mi ${s.myPercent}%: ${disp(s.myAmount)}</div>
+            </div>
+          </div>
+          <div style="margin-top:6px;font-size:.78rem;font-weight:700;color:#0891b2">Transferir al otro: ${disp(theirAmt)}</div>
+        </div>`;
+      }).join('');
+
+      html += `<div class="sc-card" style="border:1.5px solid #bae6fd">
+        <button class="sc-hdr" onclick="App.toggleSection('sc-shared-hist')" style="color:#0891b2">
+          <span>🤝 Gastos compartidos (${state.shared.length})</span>
+          <span class="sc-arrow ${sharedOpen?'open':''}">▼</span>
+        </button>
+        ${sharedOpen?`<div class="sc-body">${sharedItems}</div>`:''}
+      </div>`;
+    }
+
     return html;
   }
 
@@ -1460,11 +1298,7 @@ const App = (() => {
 
   // ── Ajustes ───────────────────────────────────────────────────────
   function renderSettings() {
-    const inc      = totalIncome();
-    const authType = Auth.getAuthType();
-    const bioOn    = Auth.isBioEnabled();
-    const pinOn    = Auth.isPinEnabled();
-    const authLbl  = pinOn?'PIN de 4 dígitos':(bioOn?'Huella / Face ID':'No configurado');
+    const inc = totalIncome();
 
     const incItemsHtml = state.incomeItems.length
       ? state.incomeItems.map(i=>`<div class="income-item-row">
@@ -1502,20 +1336,6 @@ const App = (() => {
             <input type="number" id="settings-income" value="${state.income||''}" placeholder="Ej: 2000000" inputmode="numeric"/>
             <button class="btn-settings-save" onclick="App.saveSettingsInline()">Guardar</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <p class="settings-section-lbl">Seguridad</p>
-      <div class="settings-card">
-        <div class="settings-row">
-          <span class="settings-row-label">Método actual</span>
-          <span class="settings-badge ${(bioOn||pinOn)?'':'off'}">${authLbl}</span>
-        </div>
-        <div class="settings-row">
-          <span class="settings-row-label">Bloqueo automático</span>
-          <span class="settings-row-val">${(bioOn||pinOn)?'120 seg':'—'}</span>
         </div>
       </div>
     </div>
@@ -1898,7 +1718,7 @@ const App = (() => {
     init, setTab, openSettings, closeSettings, saveSettings,
     deleteMovement, deleteFixed, fillFixedItem, toggleSuggestions, deleteSuggestion,
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
-    saveSettingsInline, saveUsername, resetAuth, goMonth,
+    saveSettingsInline, saveUsername, goMonth,
     doUpdate, refreshIfSettings,
     addSavingsCatUI, deleteSavingsCat,
     toggleSection,
@@ -1912,122 +1732,8 @@ const App = (() => {
   };
 })();
 
-// ══ PANTALLA DE BLOQUEO ══════════════════════════════════════════════
-(async () => {
-  const lockScreen = document.getElementById('lock-screen');
-  const setupDiv   = document.getElementById('lock-setup');
-  const setupPinDiv= document.getElementById('lock-setup-pin');
-  const authDiv    = document.getElementById('lock-auth');
-  const pinAuthDiv = document.getElementById('lock-pin-auth');
-  const supported  = await Auth.isSupported();
-
-  function showApp() { lockScreen.classList.add('hidden'); App.init(); }
-
-  function autoLock() {
-    let bgTime=null;
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.hidden){ bgTime=Date.now(); }
-      else { if(bgTime&&Date.now()-bgTime>120000) location.reload(); bgTime=null; }
-    });
-  }
-
-  // ── PIN pad helper ─────────────────────────────────────────────
-  function makePinPad(dotsIds, padId, delId, onComplete, msgId) {
-    let entered = '';
-    const dots  = dotsIds.map(id=>document.getElementById(id));
-    const msg   = msgId ? document.getElementById(msgId) : null;
-    function updateDots() { dots.forEach((d,i)=> d.classList.toggle('filled', i<entered.length)); }
-    function reset(txt)   { entered=''; updateDots(); if(msg){ msg.textContent=txt||''; } }
-    document.getElementById(padId).querySelectorAll('.pin-key[data-d]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        if(entered.length>=4) return;
-        entered += btn.dataset.d; updateDots();
-        if(entered.length===4){ const v=entered; entered=''; updateDots(); onComplete(v, reset); }
-      });
-    });
-    document.getElementById(delId).addEventListener('click', ()=>{ entered=entered.slice(0,-1); updateDots(); });
-    return { reset };
-  }
-
-  // ── PIN setup flow (fallback cuando no hay biometría) ─────────
-  function startPinSetup() {
-    setupDiv.classList.add('hidden');
-    setupPinDiv.classList.remove('hidden');
-    let firstPin='', confirmStep=false;
-    makePinPad(['spd0','spd1','spd2','spd3'],'setup-pin-pad','setup-pin-del', (pin, reset)=>{
-      if(!confirmStep){
-        firstPin=pin; confirmStep=true;
-        document.getElementById('setup-pin-subtitle').textContent='Confirma tu PIN';
-        reset();
-      } else {
-        if(pin===firstPin){ Auth.setupPin(pin); showApp(); }
-        else {
-          document.getElementById('setup-pin-msg').textContent='Los PIN no coinciden';
-          confirmStep=false; firstPin='';
-          document.getElementById('setup-pin-subtitle').textContent='Crea tu PIN de 4 dígitos';
-          setTimeout(()=>{ document.getElementById('setup-pin-msg').textContent=''; reset(); }, 700);
-        }
-      }
-    }, 'setup-pin-msg');
-  }
-
-  // ── Flujo: PIN ya configurado (fallback sin bio) ───────────────
-  if (Auth.isPinEnabled()) {
-    lockScreen.classList.remove('hidden');
-    pinAuthDiv.classList.remove('hidden');
-    makePinPad(['apd0','apd1','apd2','apd3'],'auth-pin-pad','auth-pin-del',
-      (pin, reset)=>{
-        if(Auth.verifyPin(pin)){ showApp(); }
-        else {
-          const dots=['apd0','apd1','apd2','apd3'].map(id=>document.getElementById(id));
-          dots.forEach(d=>d.classList.add('shake'));
-          document.getElementById('auth-pin-msg').textContent='PIN incorrecto';
-          setTimeout(()=>{ dots.forEach(d=>d.classList.remove('shake')); document.getElementById('auth-pin-msg').textContent=''; reset(); }, 600);
-        }
-      }, 'auth-pin-msg');
-    autoLock(); return;
-  }
-
-  // ── Flujo: Bio ya configurada ──────────────────────────────────
-  if (Auth.isBioEnabled()) {
-    lockScreen.classList.remove('hidden');
-    authDiv.classList.remove('hidden');
-    const fpBtn = document.getElementById('btn-authenticate');
-    async function tryAuth() {
-      fpBtn.classList.remove('error'); fpBtn.classList.add('pulse');
-      const ok = await Auth.authenticateBio();
-      fpBtn.classList.remove('pulse');
-      if(ok){ showApp(); } else { fpBtn.classList.add('error'); setTimeout(()=>fpBtn.classList.remove('error'),600); }
-    }
-    fpBtn.addEventListener('click', tryAuth);
-    setTimeout(tryAuth, 300);
-    autoLock(); return;
-  }
-
-  // ── Primera vez: forzar setup ──────────────────────────────────
-  lockScreen.classList.remove('hidden');
-
-  if (supported) {
-    // Dispositivo con biometría → solo bio, sin skip
-    setupDiv.classList.remove('hidden');
-    const bioMsg = document.getElementById('setup-bio-msg');
-    document.getElementById('btn-setup-bio').addEventListener('click', async ()=>{
-      if(bioMsg) bioMsg.textContent = 'Verificando...';
-      const ok = await Auth.registerBio();
-      if(ok){ showApp(); }
-      else {
-        if(bioMsg) bioMsg.textContent = 'No se pudo activar. Toca para intentar de nuevo.';
-      }
-    });
-  } else {
-    // Dispositivo sin biometría → PIN como único método
-    setupPinDiv.classList.remove('hidden');
-    document.getElementById('setup-pin-subtitle').textContent = 'Crea tu PIN de 4 dígitos';
-    const backBtn = document.getElementById('btn-back-setup');
-    if(backBtn) backBtn.style.display = 'none';
-    startPinSetup();
-  }
-})();
+// ══ ARRANQUE DE LA APP ═══════════════════════════════════════════════
+App.init();
 
 // ══ SERVICE WORKER — DETECCIÓN DE ACTUALIZACIÓN ═══════════════════════
 window._swWaiting = null;
