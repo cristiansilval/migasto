@@ -480,6 +480,10 @@
 
   <main id="main-content"></main>
   <div id="toast"></div>
+  <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:998;background:#059669;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.2)">
+    <span style="font-size:.88rem;font-weight:600">🎉 Hay una actualización disponible</span>
+    <button onclick="App.doUpdate()" style="background:#fff;color:#059669;border:none;padding:7px 14px;border-radius:8px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap">Actualizar</button>
+  </div>
 
   <nav>
     <button class="nav-btn active" id="nav-home" onclick="App.setTab('home')">
@@ -1636,6 +1640,8 @@ const App = (() => {
 
   function doUpdate() {
     if(!window._swWaiting) return;
+    const banner = document.getElementById('update-banner');
+    if(banner) banner.style.display = 'none';
     window._swWaiting.postMessage({ type:'SKIP_WAITING' });
     navigator.serviceWorker.addEventListener('controllerchange', ()=>location.reload());
   }
@@ -1794,7 +1800,8 @@ if ('serviceWorker' in navigator) {
 
   function _markUpdate(sw) {
     window._swWaiting = sw;
-    // Re-renderizar ajustes si la pestaña está activa
+    const banner = document.getElementById('update-banner');
+    if(banner) banner.style.display = 'flex';
     try { if(App && typeof App.refreshIfSettings==='function') App.refreshIfSettings(); } catch {}
   }
 }
