@@ -54,6 +54,40 @@
       --card:         #1e293b;
       --border:       #334155;
     }
+    /* Dark mode: overrides para elementos con colores hardcodeados */
+    body.dark input,
+    body.dark textarea,
+    body.dark select {
+      background: #1e293b !important;
+      color: #f1f5f9 !important;
+      border-color: #334155 !important;
+    }
+    body.dark input::placeholder,
+    body.dark textarea::placeholder { color: #64748b !important; }
+    body.dark .form-card input:focus,
+    body.dark .settings-field-row input:focus { background: #263348 !important; }
+    body.dark .uf-info { background: #0c2031 !important; border-color: #1e4060 !important; color: #7dd3fc !important; }
+    body.dark .total-bar { background: #263348 !important; color: #f1f5f9 !important; }
+    body.dark .info-note { background: #1a2535 !important; color: #94a3b8 !important; }
+    body.dark .empty-state { color: #64748b !important; }
+    body.dark .month-nav { background: #1e293b !important; }
+    body.dark .settings-badge { background: #14532d !important; color: #86efac !important; }
+    body.dark .update-notice { background: #052e16 !important; border-color: #166534 !important; }
+    body.dark .update-notice-txt { color: #86efac !important; }
+    body.dark nav { background: #1e293b !important; border-top-color: #334155 !important; }
+    body.dark .nav-btn { color: #64748b !important; }
+    body.dark .nav-btn.active { color: var(--brand) !important; }
+    body.dark .nav-btn.active-daily { color: #38bdf8 !important; }
+    body.dark .nav-btn.active-fixed { color: var(--fixed) !important; }
+    body.dark .nav-btn.active-hist  { color: #94a3b8 !important; }
+    body.dark .nav-btn.active-savings { color: var(--success) !important; }
+    body.dark .nav-btn.active-projects { color: var(--warn) !important; }
+    body.dark .nav-btn.active-shared { color: #22d3ee !important; }
+    body.dark .sc-hdr { color: var(--text) !important; }
+    body.dark .section-title { color: #94a3b8 !important; }
+    body.dark .settings-row-label { color: #94a3b8 !important; }
+    body.dark .settings-row-val { color: #f1f5f9 !important; }
+    body.dark .settings-section-lbl { color: #64748b !important; }
 
     html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 
@@ -136,7 +170,7 @@
     .form-card { background: var(--card); border-radius: var(--radius); padding: 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.07); display: flex; flex-direction: column; gap: 12px; }
     .form-card label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-bottom: 4px; display: block; }
     .form-card input { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 13px; font-size: .97rem; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; font-family: inherit; }
-    .form-card input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: #fff; }
+    .form-card input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: var(--card); }
     .form-card input::placeholder { color: #94a3b8; }
     .form-card.fixed-form input:focus { border-color: var(--fixed); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
     .form-card.fixed-form .form-title { font-size: .93rem; font-weight: 700; color: var(--fixed); margin-bottom: -4px; }
@@ -300,7 +334,7 @@
     /* Row with input + button */
     .settings-field-row { display: flex; gap: 8px; align-items: center; }
     .settings-field-row input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 11px 12px; font-size: .93rem; color: var(--text); background: var(--bg); outline: none; font-family: inherit; -webkit-appearance: none; }
-    .settings-field-row input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: #fff; }
+    .settings-field-row input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: var(--card); }
     .btn-settings-save { padding: 11px 15px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-sm); font-size: .88rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
     .btn-settings-save:active { opacity: .85; }
     .btn-settings-save.success-bg { background: var(--success); }
