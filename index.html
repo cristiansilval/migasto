@@ -1389,18 +1389,25 @@ const App = (() => {
             const c = catStyle(m.category);
             if(_editingMovement===m.id) {
               const curMonth = m.date ? m.date.slice(0,7) : todayMk();
-              return `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
-                <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off"
-                  style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:var(--card);outline:none;width:100%"/>
-                <div style="display:flex;gap:6px">
-                  <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric"
-                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:var(--card);outline:none"/>
-                  <input id="edit-month-${m.id}" type="month" value="${curMonth}"
-                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--text);background:var(--card);outline:none"/>
+              const inp = `border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:var(--bg);width:100%;outline:none`;
+              return `<div style="padding:10px;margin:4px 0;background:var(--bg);border-radius:10px;border:1.5px solid var(--brand);display:flex;flex-direction:column;gap:8px">
+                <div>
+                  <div style="font-size:.65rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Nombre</div>
+                  <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off" style="${inp}"/>
                 </div>
-                <div style="display:flex;gap:6px;justify-content:flex-end">
-                  <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
-                  <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 16px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div>
+                    <div style="font-size:.65rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Monto</div>
+                    <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric" style="${inp}"/>
+                  </div>
+                  <div>
+                    <div style="font-size:.65rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Mes</div>
+                    <input id="edit-month-${m.id}" type="month" value="${curMonth}" style="${inp}"/>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:2px">
+                  <button onclick="App.cancelEditMovement()" style="padding:7px 14px;background:none;color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+                  <button onclick="App.saveEditMovement('${m.id}')" style="padding:7px 18px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
                 </div>
               </div>`;
             }
