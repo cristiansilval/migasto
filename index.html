@@ -396,10 +396,6 @@
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
       Gastos
     </button>
-    <button class="nav-btn" id="nav-fixed" onclick="App.setTab('fixed')">
-      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-      Fijos
-    </button>
     <button class="nav-btn" id="nav-movements" onclick="App.setTab('movements')">
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
       Historial
@@ -407,10 +403,6 @@
     <button class="nav-btn" id="nav-savings" onclick="App.setTab('savings')">
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg></span>
       Ahorro
-    </button>
-    <button class="nav-btn" id="nav-projects" onclick="App.setTab('projects')">
-      <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-      Proyectos
     </button>
     <button class="nav-btn" id="nav-shared" onclick="App.setTab('shared')">
       <span class="nav-icon-wrap"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
@@ -473,6 +465,7 @@ const App = (() => {
   const DEFAULT_FIXED_CATS = ['Comida/Casa','Gastos médicos','Entretenimiento','Hogar','Regalos'];
 
   let _openSections      = new Set(); // collapsible section state (not persisted)
+  let _gastosMode        = 'daily';  // 'daily' | 'fixed' — sub-modo de la pestaña Gastos
   let _fixedCurrency     = 'CLP';    // currency selector in fixed form (not persisted)
   let _sharedCurrency    = 'CLP';    // currency selector in shared form (not persisted)
   let _editingMovement   = null;     // id del movimiento en edición
@@ -967,20 +960,26 @@ const App = (() => {
   }
 
   // ── Tabs ──────────────────────────────────────────────────────────
+  function setGastosMode(mode) {
+    _gastosMode = mode;
+    if(state.tab !== 'daily') { setTab('daily'); return; }
+    render();
+  }
+
   function setTab(tab) {
-    // Reset edit states when navigating away (except when explicitly editing)
+    // Redirigir tabs eliminados a sus nuevas ubicaciones
+    if(tab === 'fixed')    { _gastosMode = 'fixed';  tab = 'daily'; }
+    if(tab === 'projects') { tab = 'savings'; }
+
     if(tab !== state.tab) {
-      if(tab !== 'fixed')    _editingFixed   = null;
-      if(tab !== 'savings')  _editingSaving  = null;
-      if(tab !== 'projects') _editingProject = null;
-      if(tab !== 'daily')    _paymentMethod  = 'cash';
+      if(tab !== 'daily')   { _editingFixed = null; _gastosMode = 'daily'; }
+      if(tab !== 'savings') { _editingSaving = null; _editingProject = null; }
+      if(tab !== 'daily')   _paymentMethod = 'cash';
     }
-    state.tab=tab;
+    state.tab = tab;
     document.getElementById('nav-daily').className     = 'nav-btn'+(tab==='daily'     ?' active-daily':'');
-    document.getElementById('nav-fixed').className     = 'nav-btn'+(tab==='fixed'     ?' active-fixed':'');
     document.getElementById('nav-movements').className = 'nav-btn'+(tab==='movements' ?' active-hist':'');
     document.getElementById('nav-savings').className   = 'nav-btn'+(tab==='savings'   ?' active-savings':'');
-    document.getElementById('nav-projects').className  = 'nav-btn'+(tab==='projects'  ?' active-projects':'');
     document.getElementById('nav-shared').className    = 'nav-btn'+(tab==='shared'    ?' active-shared':'');
     document.getElementById('btn-settings-header').className = 'btn-eye-header'+(tab==='settings' ?' active-settings':'');
     const btnRes = document.getElementById('btn-resumen');
@@ -1088,10 +1087,8 @@ const App = (() => {
 
     if      (state.tab==='home')      el.innerHTML = renderHome(gt,dt,ft,pct,mk);
     else if (state.tab==='daily')     el.innerHTML = renderDailyTab(mk,dt);
-    else if (state.tab==='fixed')     el.innerHTML = renderFixed();
     else if (state.tab==='movements') el.innerHTML = renderHistorial();
     else if (state.tab==='savings')   el.innerHTML = renderSavingsTab(mk);
-    else if (state.tab==='projects')  el.innerHTML = renderProyectos();
     else if (state.tab==='settings')  el.innerHTML = renderSettings();
     else if (state.tab==='shared')    el.innerHTML = renderCompartidos();
 
@@ -1124,7 +1121,19 @@ const App = (() => {
 
   // Pestaña Gastos Mensuales
   function renderDailyTab(mk, dt) {
-    return renderDailyForm() + renderDailyList(mk, dt);
+    const toggle = `
+      <div style="display:flex;gap:0;background:var(--bg);border-radius:12px;padding:4px;margin:12px 16px 0">
+        <button onclick="App.setGastosMode('daily')" style="flex:1;padding:8px 0;border:none;border-radius:9px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;
+          ${_gastosMode==='daily' ? 'background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)' : 'background:none;color:var(--text-2)'}">
+          Diario
+        </button>
+        <button onclick="App.setGastosMode('fixed')" style="flex:1;padding:8px 0;border:none;border-radius:9px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;
+          ${_gastosMode==='fixed' ? 'background:var(--card);color:var(--fixed);box-shadow:0 1px 4px rgba(0,0,0,.1)' : 'background:none;color:var(--text-2)'}">
+          Fijos
+        </button>
+      </div>`;
+    if(_gastosMode === 'fixed') return toggle + renderFixed();
+    return toggle + renderDailyForm() + renderDailyList(mk, dt);
   }
 
   function renderDailyList(mk, dt) {
@@ -1333,7 +1342,11 @@ const App = (() => {
       <p class="balance-amount" style="justify-content:center;display:flex">${dispHtml(allTime)}</p>
     </div>`;
 
-    return nav + totalCard + renderSavings(mk);
+    // Separador visual antes de Proyectos
+    const projSeparator = `<div style="margin:8px 16px 0;padding-top:8px;border-top:1.5px solid var(--border)">
+      <p style="font-size:.72rem;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:0">Proyectos</p>
+    </div>`;
+    return nav + totalCard + renderSavings(mk) + projSeparator + renderProyectos();
   }
 
   // ── Gastos Fijos ──────────────────────────────────────────────────
@@ -2250,7 +2263,7 @@ const App = (() => {
   }
 
   return {
-    init, setTab, openSettings, closeSettings, saveSettings,
+    init, setTab, setGastosMode, openSettings, closeSettings, saveSettings,
     deleteMovement, deleteFixed, fillFixedItem, toggleSuggestions, deleteSuggestion,
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
     saveSettingsInline, saveUsername, goMonth,
