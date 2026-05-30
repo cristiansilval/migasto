@@ -2185,7 +2185,7 @@ const App = (() => {
     document.getElementById('btn-eye').addEventListener('click', toggleAmounts);
     document.getElementById('modal-settings').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeSettings(); });
     document.getElementById('income-input').addEventListener('keydown', e=>{ if(e.key==='Enter') saveSettings(); });
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(()=>{});
   }
 
   function doUpdate() {
@@ -2258,9 +2258,19 @@ App.init();
 window._swWaiting = null;
 
 if ('serviceWorker' in navigator) {
+  // Recarga automática cuando el SW nuevo toma control (skipWaiting activo)
+  let _reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(_reloading) return;
+    _reloading = true;
+    location.reload();
+  });
+
   navigator.serviceWorker.getRegistration().then(reg=>{
     if(!reg) return;
     if(reg.waiting) _markUpdate(reg.waiting);
+    // Forzar chequeo de actualización cada vez que se abre la app
+    reg.update();
     reg.addEventListener('updatefound', ()=>{
       const newSW = reg.installing;
       newSW.addEventListener('statechange', ()=>{
