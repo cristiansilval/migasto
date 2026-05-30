@@ -464,6 +464,7 @@ const App = (() => {
   let _ufCache           = null;     // { rate, date }
   let _paymentMethod     = 'cash';   // 'cash' | 'tc'
   let _editingFixed      = null;     // id del gasto fijo en edición
+  let _editingFixedSnap  = null;     // {mk, id} — fijo en snapshot de historial en edición
   let _editingSaving     = null;     // id del ahorro en edición
   let _editingProject    = null;     // id del proyecto en edición
   let _selectedShared   = new Set(); // ids seleccionados para código grupal
@@ -671,6 +672,44 @@ const App = (() => {
     state.trash = state.trash.filter(t=>t.id!==id);
     save(); render(); toast(`"${m.item}" restaurado`);
   }
+  function editFixedSnap(mk, id) {
+    _editingFixedSnap = {mk, id};
+    const el = document.getElementById('main-content');
+    if(el) el.innerHTML = renderHistorial();
+  }
+  function cancelEditFixedSnap() {
+    _editingFixedSnap = null;
+    const el = document.getElementById('main-content');
+    if(el) el.innerHTML = renderHistorial();
+  }
+  function saveEditFixedSnap(mk, id) {
+    const nameEl  = document.getElementById('efsnap-name');
+    const amtEl   = document.getElementById('efsnap-amt');
+    const monthEl = document.getElementById('efsnap-month');
+    const name  = (nameEl?.value||'').trim();
+    const amt   = parseFloat(amtEl?.value);
+    const targetMk = monthEl?.value || mk;
+    if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
+    // Sacar del snapshot actual
+    const snap = state.fixedSnapshots[mk];
+    if(!snap) return;
+    const idx = snap.findIndex(f=>f.id===id);
+    if(idx===-1) return;
+    const entry = {...snap[idx], item:name, amount:amt};
+    snap.splice(idx, 1);
+    if(!snap.length) delete state.fixedSnapshots[mk];
+    // Insertar en snapshot destino
+    if(!state.fixedSnapshots[targetMk]) state.fixedSnapshots[targetMk] = [];
+    // evitar duplicado de id
+    state.fixedSnapshots[targetMk] = state.fixedSnapshots[targetMk].filter(f=>f.id!==id);
+    state.fixedSnapshots[targetMk].push(entry);
+    _editingFixedSnap = null;
+    save();
+    const el = document.getElementById('main-content');
+    if(el) el.innerHTML = renderHistorial();
+    toast('Guardado ✓');
+  }
+
   function editMovement(id) {
     _editingMovement = id; render();
   }
@@ -1428,7 +1467,46 @@ const App = (() => {
               ${saldo!==null?`<span style="font-size:.72rem;color:var(--text-2)">Saldo: <strong style="color:${saldo>=0?'var(--success)':'var(--danger)'}">${disp(saldo)}</strong></span>`:''}
             </div>
             <div class="balance-breakdown">
-              ${ft?`<div class="breakdown-row fixed-row"><span class="br-label">Gastos fijos</span><span class="br-val">${disp(ft)}</span></div>`:''}
+              ${ft ? (() => {
+                const fixedOpen = _openSections.has('fixed-hist-'+mk);
+                const inp = `border:1.5px solid var(--border);border-radius:8px;padding:7px 9px;font-size:.83rem;font-family:inherit;color:var(--text);background:var(--bg);width:100%;outline:none`;
+                const fixedRows = fixedSnap.map(f => {
+                  if(_editingFixedSnap && _editingFixedSnap.mk===mk && _editingFixedSnap.id===f.id) {
+                    return `<div style="padding:8px;margin:3px 0;background:var(--bg);border-radius:9px;border:1.5px solid var(--fixed);display:flex;flex-direction:column;gap:7px">
+                      <div>
+                        <div style="font-size:.63rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Nombre</div>
+                        <input id="efsnap-name" value="${esc(f.item)}" maxlength="60" style="${inp}"/>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                        <div>
+                          <div style="font-size:.63rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Monto</div>
+                          <input id="efsnap-amt" type="number" value="${f.amount}" min="1" inputmode="numeric" style="${inp}"/>
+                        </div>
+                        <div>
+                          <div style="font-size:.63rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Mes</div>
+                          <input id="efsnap-month" type="month" value="${mk}" style="${inp}"/>
+                        </div>
+                      </div>
+                      <div style="display:flex;gap:7px;justify-content:flex-end">
+                        <button onclick="App.cancelEditFixedSnap()" style="padding:6px 12px;background:none;color:var(--text-2);border:1.5px solid var(--border);border-radius:7px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+                        <button onclick="App.saveEditFixedSnap('${mk}','${f.id}')" style="padding:6px 14px;background:var(--fixed);color:#fff;border:none;border-radius:7px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
+                      </div>
+                    </div>`;
+                  }
+                  return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
+                    <span style="flex:1;font-size:.82rem;font-weight:600">${esc(f.item)}</span>
+                    <span style="font-size:.82rem;font-weight:700;white-space:nowrap">${disp(f.amount)}</span>
+                    <button onclick="App.editFixedSnap('${mk}','${f.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;padding:2px 5px;border-radius:5px;line-height:1" title="Editar">✏️</button>
+                  </div>`;
+                }).join('');
+                return `<div>
+                  <button onclick="App.toggleSection('fixed-hist-${mk}')" class="breakdown-row fixed-row" style="width:100%;text-align:left;border:none;cursor:pointer;background:none;padding:0;font-family:inherit">
+                    <span class="br-label">Gastos fijos</span>
+                    <span style="display:flex;align-items:center;gap:6px"><span class="br-val">${disp(ft)}</span><span style="font-size:.65rem;color:var(--text-2)">${fixedOpen?'▲':'▼'}</span></span>
+                  </button>
+                  ${fixedOpen ? `<div style="padding:4px 0 0">${fixedRows}</div>` : ''}
+                </div>`;
+              })() : ''}
               ${movT?`<div class="breakdown-row daily-row"><span class="br-label">Gastos del mes</span><span class="br-val">${disp(movT)}</span></div>`:''}
             </div>
             <div style="margin-top:10px">${itemRows}</div>
@@ -2154,6 +2232,7 @@ const App = (() => {
     addMovCatUI, deleteMovCat, addFixedCatUI, deleteFixedCat,
     setFixedCurrency, jumpToMonth,
     addProjectUI, deleteProject,
+    editFixedSnap, saveEditFixedSnap, cancelEditFixedSnap,
     editMovement, saveEditMovement, cancelEditMovement,
     permanentDeleteMovement, restoreMovement,
     toggleDark,
