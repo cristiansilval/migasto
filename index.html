@@ -1443,40 +1443,6 @@ const App = (() => {
       </div>`;
     }
 
-    // ── Gastos Compartidos (Change 5) ──
-    if(state.shared.length > 0) {
-      const sharedOpen = _openSections.has('sc-shared-hist');
-      const sharedItems = state.shared.map(s => {
-        const d = new Date(s.createdAt);
-        const dateStr = d.toLocaleDateString('es-CO', {day:'numeric', month:'short', year:'numeric'});
-        const theirAmt = s.totalAmount - s.myAmount;
-        const typeLbl = s.assignedAs==='fixed'
-          ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
-          : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
-        return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:.85rem;font-weight:700">${esc(s.name)}</div>
-              <div style="font-size:.7rem;color:var(--text-2);margin-top:2px">${dateStr} · ${typeLbl}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:.82rem;font-weight:700">Total: ${disp(s.totalAmount)}</div>
-              <div style="font-size:.75rem;color:var(--text-2)">Mi ${s.myPercent}%: ${disp(s.myAmount)}</div>
-            </div>
-          </div>
-          <div style="margin-top:6px;font-size:.78rem;font-weight:700;color:#0891b2">Transferir al otro: ${disp(theirAmt)}</div>
-        </div>`;
-      }).join('');
-
-      html += `<div class="sc-card" style="border:1.5px solid #bae6fd">
-        <button class="sc-hdr" onclick="App.toggleSection('sc-shared-hist')" style="color:#0891b2">
-          <span>🤝 Gastos compartidos (${state.shared.length})</span>
-          <span class="sc-arrow ${sharedOpen?'open':''}">▼</span>
-        </button>
-        ${sharedOpen?`<div class="sc-body">${sharedItems}</div>`:''}
-      </div>`;
-    }
-
     return html;
   }
 
