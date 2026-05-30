@@ -464,6 +464,7 @@ const App = (() => {
   let _editingFixed      = null;     // id del gasto fijo en edición
   let _editingSaving     = null;     // id del ahorro en edición
   let _editingProject    = null;     // id del proyecto en edición
+  let _selectedShared   = new Set(); // ids seleccionados para código grupal
 
   async function fetchUF() {
     const today = (()=>{ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
@@ -1671,6 +1672,56 @@ const App = (() => {
     save(); render(); toast('Eliminado');
   }
 
+  function toggleSharedSelect(id) {
+    if(_selectedShared.has(id)) _selectedShared.delete(id);
+    else _selectedShared.add(id);
+    // re-render solo la sección de lista para no perder el formulario
+    const el = document.getElementById('main-content');
+    if(el) { el.innerHTML = renderCompartidos(); }
+  }
+
+  function generateGroupCode() {
+    const ids = [..._selectedShared];
+    if(!ids.length) { toast('Selecciona al menos un ítem'); return; }
+    const items = ids.map(id => {
+      const s = state.shared.find(x=>x.id===id);
+      if(!s) return null;
+      const theirPct = Math.round(100 - s.myPercent);
+      const theirAmt = Math.round(s.totalAmount * theirPct / 100);
+      return {
+        name: s.name, total: s.totalAmount, pct: theirPct, amt: theirAmt,
+        ...(s.currency==='UF' && s.ufTotal ? {
+          currency:'UF', ufTotal:s.ufTotal, ufRate:s.ufRate,
+          ufAmt: Math.round(s.ufTotal * theirPct / 100 * 100) / 100
+        } : {})
+      };
+    }).filter(Boolean);
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify({v:2, items}))));
+    _showGroupModal(code, items.length);
+  }
+
+  function _showGroupModal(code, count) {
+    const existing = document.getElementById('group-code-modal');
+    if(existing) existing.remove();
+    const waText = encodeURIComponent('Código MiGasto ('+count+' gasto'+(count>1?'s':'')+'):\n'+code);
+    const waUrl = 'https://wa.me/?text='+waText;
+    const modal = document.createElement('div');
+    modal.id = 'group-code-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:24px 20px 32px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:800;font-size:1rem;color:var(--text)">📦 Código grupal (${count} ítem${count>1?'s':''})</span>
+          <button onclick="document.getElementById('group-code-modal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-2)">✕</button>
+        </div>
+        <textarea readonly onclick="this.select()" style="width:100%;height:80px;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:.72rem;font-family:monospace;background:var(--bg);color:var(--text);resize:none">${code}</textarea>
+        <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${code.replace(/'/g,"\\'")}').then(()=>{App._toast('Código copiado ✓');document.getElementById('group-code-modal').remove()}).catch(()=>{})" style="width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit">📋 Copiar código</button>
+        <a href="${waUrl}" target="_blank" style="display:block;width:100%;padding:13px;background:#25d366;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;text-decoration:none">💬 Enviar por WhatsApp</a>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  }
+
   function generateShareCode(id) {
     const s = state.shared.find(s=>s.id===id);
     if(!s) return;
@@ -1701,7 +1752,39 @@ const App = (() => {
     if(!raw){ toast('Pega un código primero'); return; }
     try {
       const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
-      if(!payload.v||!payload.name||!payload.total){ toast('Código inválido'); return; }
+      if(!payload.v){ toast('Código inválido'); return; }
+
+      // ── v:2 — código grupal (múltiples ítems) ─────────────────────
+      if(payload.v===2 && Array.isArray(payload.items)) {
+        if(!payload.items.length){ toast('El código no contiene ítems'); return; }
+        // Importar todos automáticamente como shared
+        let importados = 0;
+        for(const it of payload.items) {
+          if(!it.name||!it.total) continue;
+          const isUF = it.currency==='UF' && it.ufTotal;
+          if(isUF && it.ufRate) _ufCache = { rate: it.ufRate, date: new Date().toISOString().slice(0,10) };
+          const myAmt = isUF ? Math.round(it.ufAmt * (it.ufRate||0)) : it.amt;
+          state.shared.push({
+            id:'sh'+Date.now()+importados,
+            name: it.name,
+            totalAmount: it.total,
+            myPercent: it.pct,
+            myAmount: myAmt,
+            assignedAs: 'monthly',
+            assignedId: null,
+            createdAt: new Date().toISOString(),
+            ...(isUF ? { currency:'UF', ufTotal:it.ufTotal, ufRate:it.ufRate } : {})
+          });
+          importados++;
+        }
+        save();
+        if(document.getElementById('sh-import-input')) document.getElementById('sh-import-input').value='';
+        toast(`${importados} gasto${importados>1?'s':''} importado${importados>1?'s':''} ✓ — revisa y ajusta si necesitas`);
+        render();
+        return;
+      }
+
+      if(!payload.name||!payload.total){ toast('Código inválido'); return; }
       const isUFPayload = payload.currency === 'UF' && payload.ufTotal;
       // Activar modo UF si corresponde (re-renderiza el form)
       if(isUFPayload && _sharedCurrency !== 'UF') {
@@ -1759,28 +1842,47 @@ const App = (() => {
     const catOpts = uniqueCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
 
     let list = '';
+    const selCount = _selectedShared.size;
+    // Barra de acción grupal
+    const groupBar = state.shared.length ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;min-height:32px">
+        <span style="font-size:.72rem;color:var(--text-2)">${selCount>0?`${selCount} seleccionado${selCount>1?'s':''}`:''}</span>
+        ${selCount>0 ? `
+          <div style="display:flex;gap:8px">
+            <button onclick="App.clearSharedSelect()" style="font-size:.72rem;padding:5px 11px;border:1.5px solid var(--border);border-radius:7px;background:none;color:var(--text-2);cursor:pointer;font-family:inherit">Limpiar</button>
+            <button onclick="App.generateGroupCode()" style="font-size:.73rem;font-weight:700;padding:5px 13px;border:none;border-radius:7px;background:#0891b2;color:#fff;cursor:pointer;font-family:inherit">📦 Código grupal</button>
+          </div>` : ''}
+      </div>` : '';
+
     if(!state.shared.length) {
       list = `<div class="empty-state"><p>Sin gastos compartidos aún.<br>Agrega un gasto que divides con alguien.</p></div>`;
     } else {
       state.shared.forEach(s=>{
+        const sel = _selectedShared.has(s.id);
         const typeLbl = s.assignedAs==='fixed'
           ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
           : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
-        list += `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:6px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div class="movement-name">${esc(s.name)}</div>
-              <div style="display:flex;gap:6px;margin-top:3px;align-items:center">${typeLbl}</div>
-            </div>
-            <div style="text-align:right">
-              <div class="movement-amount">${s.currency==='UF' && s.ufTotal ? `${Math.round(s.ufTotal*s.myPercent/100*100)/100} UF` : disp(s.myAmount)}</div>
-              ${s.currency==='UF' ? `<div style="font-size:.68rem;color:var(--text-2)">${disp(s.myAmount)}</div>` : ''}
-              <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${s.currency==='UF' && s.ufTotal ? `${s.ufTotal} UF` : disp(s.totalAmount)}</div>
-              ${s.currency==='UF' && s.ufRate ? `<div style="font-size:.6rem;color:var(--text-2);opacity:.7">UF al ${new Date(s.createdAt).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}: $${Math.round(s.ufRate).toLocaleString('es-CL')}</div>` : ''}
+        list += `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:6px;${sel?'border:2px solid #0891b2;':''}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <label style="display:flex;align-items:center;cursor:pointer;flex-shrink:0">
+              <input type="checkbox" ${sel?'checked':''} onchange="App.toggleSharedSelect('${s.id}')"
+                style="width:18px;height:18px;accent-color:#0891b2;cursor:pointer;flex-shrink:0"/>
+            </label>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div class="movement-name">${esc(s.name)}</div>
+                <div style="display:flex;gap:6px;margin-top:3px;align-items:center">${typeLbl}</div>
+              </div>
+              <div style="text-align:right">
+                <div class="movement-amount">${s.currency==='UF' && s.ufTotal ? `${Math.round(s.ufTotal*s.myPercent/100*100)/100} UF` : disp(s.myAmount)}</div>
+                ${s.currency==='UF' ? `<div style="font-size:.68rem;color:var(--text-2)">${disp(s.myAmount)}</div>` : ''}
+                <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${s.currency==='UF' && s.ufTotal ? `${s.ufTotal} UF` : disp(s.totalAmount)}</div>
+                ${s.currency==='UF' && s.ufRate ? `<div style="font-size:.6rem;color:var(--text-2);opacity:.7">UF al ${new Date(s.createdAt).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}: $${Math.round(s.ufRate).toLocaleString('es-CL')}</div>` : ''}
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;border-top:1px solid var(--border)">
-            <button onclick="App.generateShareCode('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid #0891b2;border-radius:7px;background:none;color:#0891b2;cursor:pointer;font-family:inherit">📤 Compartir código</button>
+            <button onclick="App.generateShareCode('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid #0891b2;border-radius:7px;background:none;color:#0891b2;cursor:pointer;font-family:inherit">📤 Compartir</button>
             <button onclick="App.deleteShared('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid var(--danger);border-radius:7px;background:none;color:var(--danger);cursor:pointer;font-family:inherit">Eliminar</button>
           </div>
         </div>`;
@@ -1831,6 +1933,7 @@ const App = (() => {
 
       <div style="padding:12px 16px 24px">
         <p style="font-size:.68rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mis gastos compartidos (${state.shared.length})</p>
+        ${groupBar}
         ${list}
       </div>
 
@@ -1927,6 +2030,8 @@ const App = (() => {
     permanentDeleteMovement, restoreMovement,
     toggleDark,
     addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount, setSharedCurrency,
+    toggleSharedSelect, generateGroupCode, clearSharedSelect: ()=>{ _selectedShared.clear(); const el=document.getElementById('main-content'); if(el) el.innerHTML=renderCompartidos(); },
+    _toast: toast,
     addMonths, setPaymentMethod,
     editFixed, saveEditFixed, cancelEditFixed,
     editSaving, saveEditSaving, cancelEditSaving,
