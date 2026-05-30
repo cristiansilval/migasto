@@ -676,13 +676,19 @@ const App = (() => {
     _editingMovement = null; render();
   }
   function saveEditMovement(id) {
-    const nameEl = document.getElementById(`edit-name-${id}`);
-    const amtEl  = document.getElementById(`edit-amt-${id}`);
-    const name = (nameEl?.value||'').trim();
-    const amt  = parseFloat(amtEl?.value);
+    const nameEl  = document.getElementById(`edit-name-${id}`);
+    const amtEl   = document.getElementById(`edit-amt-${id}`);
+    const monthEl = document.getElementById(`edit-month-${id}`);
+    const name  = (nameEl?.value||'').trim();
+    const amt   = parseFloat(amtEl?.value);
+    const month = monthEl?.value || null;
     if(!name||!amt||amt<=0){ toast('Completa nombre y monto'); return; }
     const m = state.movements.find(m=>m.id===id);
-    if(m){ m.item=name; m.amount=amt; }
+    if(m){
+      m.item = name;
+      m.amount = amt;
+      if(month) m.date = month + '-01';
+    }
     _editingMovement=null; save(); render(); toast('Guardado ✓');
   }
   function addFixed(item, amount, category, currency, ufAmount, ufRate) {
@@ -1380,14 +1386,19 @@ const App = (() => {
           const itemRows = movs.map(m=>{
             const c = catStyle(m.category);
             if(_editingMovement===m.id) {
+              const curMonth = m.date ? m.date.slice(0,7) : todayMk();
               return `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
                 <input id="edit-name-${m.id}" value="${esc(m.item)}" maxlength="60" autocorrect="off"
-                  style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none;width:100%"/>
+                  style="border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:var(--card);outline:none;width:100%"/>
                 <div style="display:flex;gap:6px">
                   <input id="edit-amt-${m.id}" type="number" value="${m.amount}" min="1" inputmode="numeric"
-                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:#fff;outline:none"/>
-                  <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
-                  <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">✕</button>
+                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;color:var(--text);background:var(--card);outline:none"/>
+                  <input id="edit-month-${m.id}" type="month" value="${curMonth}"
+                    style="flex:1;border:1.5px solid var(--brand);border-radius:8px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--text);background:var(--card);outline:none"/>
+                </div>
+                <div style="display:flex;gap:6px;justify-content:flex-end">
+                  <button onclick="App.cancelEditMovement()" style="padding:8px 12px;background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+                  <button onclick="App.saveEditMovement('${m.id}')" style="padding:8px 16px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit">Guardar</button>
                 </div>
               </div>`;
             }
