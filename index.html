@@ -2258,14 +2258,6 @@ App.init();
 window._swWaiting = null;
 
 if ('serviceWorker' in navigator) {
-  // Recarga automática cuando el SW nuevo toma control (skipWaiting activo)
-  let _reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if(_reloading) return;
-    _reloading = true;
-    location.reload();
-  });
-
   navigator.serviceWorker.getRegistration().then(reg=>{
     if(!reg) return;
     if(reg.waiting) _markUpdate(reg.waiting);
