@@ -1173,7 +1173,7 @@ const App = (() => {
       : `<p class="balance-no-income">Sin presupuesto. <button onclick="App.openSettings()">Configurar →</button></p>`;
 
     return `<div class="balance-card">
-      <p class="balance-label">Total gastado este mes</p>
+      <p class="balance-label">Total gastado · <span style="text-transform:capitalize">${fmtMonthLabel(mk)}</span></p>
       <p class="balance-amount">${dispHtml(gt)}</p>
       ${ofLine}${breakdown}${progress}${dailyInfo}
     </div>`;
