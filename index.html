@@ -527,16 +527,20 @@ const App = (() => {
     } catch {}
   }
   function save() {
-    localStorage.setItem(KEY, JSON.stringify({
-      movements: state.movements, fixedExpenses: state.fixedExpenses,
-      incomeItems: state.incomeItems, savings: state.savings,
-      income: state.income,
-      suggestions: state.suggestions, savingsCats: state.savingsCats,
-      movCats: state.movCats, fixedCats: state.fixedCats,
-      projects: state.projects, trash: state.trash, username: state.username,
-      darkMode: state.darkMode, shared: state.shared,
-      fixedSnapshots: state.fixedSnapshots
-    }));
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        movements: state.movements, fixedExpenses: state.fixedExpenses,
+        incomeItems: state.incomeItems, savings: state.savings,
+        income: state.income,
+        suggestions: state.suggestions, savingsCats: state.savingsCats,
+        movCats: state.movCats, fixedCats: state.fixedCats,
+        projects: state.projects, trash: state.trash, username: state.username,
+        darkMode: state.darkMode, shared: state.shared,
+        fixedSnapshots: state.fixedSnapshots
+      }));
+    } catch(e) {
+      if(e.name==='QuotaExceededError') toast('⚠️ Almacenamiento lleno — limpia la papelera para liberar espacio');
+    }
   }
 
   // ── Mes ───────────────────────────────────────────────────────────
@@ -584,7 +588,9 @@ const App = (() => {
   function dispHtml(n){ return state.showAmounts ? fmt(n) : '<span style="letter-spacing:3px;font-size:1.4rem">••••••</span>'; }
   function fmtTime(iso) {
     const d=new Date(iso), now=new Date();
-    const today=now.toDateString(), yest=new Date(now.setDate(now.getDate()-1)).toDateString();
+    const today=now.toDateString();
+    const yestD=new Date(now); yestD.setDate(yestD.getDate()-1);
+    const yest=yestD.toDateString();
     const t=d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
     if(d.toDateString()===today) return `Hoy, ${t}`;
     if(d.toDateString()===yest)  return `Ayer, ${t}`;
@@ -592,7 +598,9 @@ const App = (() => {
   }
   function fmtGroup(iso) {
     const d=new Date(iso), now=new Date();
-    const today=now.toDateString(), yest=new Date(now.setDate(now.getDate()-1)).toDateString();
+    const today=now.toDateString();
+    const yestD=new Date(now); yestD.setDate(yestD.getDate()-1);
+    const yest=yestD.toDateString();
     if(d.toDateString()===today) return 'Hoy';
     if(d.toDateString()===yest)  return 'Ayer';
     return d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'short'});
@@ -627,7 +635,7 @@ const App = (() => {
           id: baseId,
           item: `${item.trim()} (${i}/${cuotas})`,
           amount: montoCuota,
-          date: `${targetMk}-01`,
+          date: `${targetMk}-15`,
           category: category || '',
           paymentMethod: 'tc'
         });
@@ -1750,10 +1758,10 @@ const App = (() => {
     ids.forEach(id => {
       const s = state.shared.find(x=>x.id===id);
       if(!s) return;
-      const mid = 'm'+Date.now()+count;
-      state.movements.push({id:mid, item:s.name, amount:s.myAmount, category:'', date:nextMk+'-01'});
+      const mid = 'm'+Date.now()+'_'+count;
+      state.movements.push({id:mid, item:s.name, amount:s.myAmount, category:'', date:nextMk+'-15'});
       state.shared.push({
-        id:'sh'+Date.now()+(count+1),
+        id:'sh'+Date.now()+'_'+(count+1),
         name:s.name, totalAmount:s.totalAmount, myPercent:s.myPercent, myAmount:s.myAmount,
         assignedAs:'monthly', assignedId:mid,
         createdAt:new Date().toISOString(),
@@ -1898,14 +1906,16 @@ const App = (() => {
           const isUF = it.currency==='UF' && it.ufTotal;
           if(isUF && it.ufRate) _ufCache = { rate: it.ufRate, date: new Date().toISOString().slice(0,10) };
           const myAmt = isUF ? Math.round(it.ufAmt * (it.ufRate||0)) : it.amt;
+          const mid = 'm'+Date.now()+'_imp'+importados;
+          state.movements.push({id:mid, item:it.name, amount:myAmt, category:'', date:todayMk()+'-15'});
           state.shared.push({
-            id:'sh'+Date.now()+importados,
+            id:'sh'+Date.now()+'_imp'+importados,
             name: it.name,
             totalAmount: it.total,
             myPercent: it.pct,
             myAmount: myAmt,
             assignedAs: 'monthly',
-            assignedId: null,
+            assignedId: mid,
             createdAt: new Date().toISOString(),
             ...(isUF ? { currency:'UF', ufTotal:it.ufTotal, ufRate:it.ufRate } : {})
           });
