@@ -14,10 +14,9 @@ cd /d "C:\Users\ASUS\Mi unidad\proyecto-mm\Gastos"
 set /p MENSAJE="Que cambiaste? (Enter para continuar): "
 if "%MENSAJE%"=="" set MENSAJE=actualizacion
 
-:: Actualizar version del cache en sw.js para forzar actualizacion en celulares
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set dt=%%I
-set VERSION=%dt:~0,12%
-powershell -Command "$content = Get-Content 'sw.js' -Raw; $content = $content -replace \"const CACHE = 'migasto-v[^']*';\", \"const CACHE = 'migasto-v%VERSION%';\"; Set-Content 'sw.js' $content -NoNewline"
+:: Actualizar version del cache usando PowerShell (compatible con Windows 11)
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmm"') do set VERSION=%%I
+powershell -NoProfile -Command "$content = Get-Content 'sw.js' -Raw; $content = $content -replace \"const CACHE = 'migasto-v[^']*';\", \"const CACHE = 'migasto-v%VERSION%';\"; Set-Content 'sw.js' $content -NoNewline"
 echo Cache version actualizada: migasto-v%VERSION%
 
 :: Git - con esto solo ya se publica en GitHub Pages
@@ -32,8 +31,8 @@ echo ================================
 echo  Listo! App actualizada en:
 echo  https://cristiansilval.github.io/migasto/
 echo.
-echo  En el celular: desliza para
-echo  refrescar y veras los cambios.
+echo  En el celular: usa el boton
+echo  girar del header para actualizar
 echo ================================
 echo.
 pause
