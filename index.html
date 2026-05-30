@@ -465,6 +465,7 @@ const App = (() => {
   let _editingSaving     = null;     // id del ahorro en edición
   let _editingProject    = null;     // id del proyecto en edición
   let _selectedShared   = new Set(); // ids seleccionados para código grupal
+  let _editingShared    = null;      // id del compartido en edición
 
   async function fetchUF() {
     const today = (()=>{ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
@@ -1620,11 +1621,15 @@ const App = (() => {
     const pctEl     = document.getElementById('sh-pct');
     const assignEl  = document.getElementById('sh-assign');
     const catEl     = document.getElementById('sh-cat');
+    const monthEl   = document.getElementById('sh-month');
     const name      = (nameEl?.value||'').trim();
     const rawTotal  = parseFloat(totalEl?.value);
     const pct       = parseFloat(pctEl?.value);
-    const assignedAs= assignEl?.value || 'fixed';
     const cat       = catEl?.value || '';
+    const monthVal  = monthEl?.value || null; // YYYY-MM o null
+    const isFuture  = monthVal && monthVal > todayMk();
+    // Si es mes futuro, forzar tipo mensual (los fijos no tienen mes)
+    const assignedAs= isFuture ? 'monthly' : (assignEl?.value || 'fixed');
     if(!name)              { toast('Ingresa un nombre'); return; }
     if(!rawTotal||rawTotal<=0){ toast('Ingresa el monto total'); return; }
     if(!pct||pct<=0||pct>100){ toast('El porcentaje debe ser entre 1 y 100'); return; }
@@ -1645,7 +1650,7 @@ const App = (() => {
       state.fixedExpenses.push({id:fid, item:name, amount:myAmount, category:cat});
       assignedId = fid;
     } else {
-      const mk = activeMk();
+      const mk = monthVal || activeMk();
       const mid = 'm'+Date.now();
       state.movements.push({id:mid, item:name, amount:myAmount, category:cat, date:mk+'-01'});
       assignedId = mid;
@@ -1653,7 +1658,8 @@ const App = (() => {
     state.shared.push({
       id, name, totalAmount:totalCLP, myPercent:pct, myAmount,
       assignedAs, assignedId, createdAt:new Date().toISOString(),
-      currency, ufTotal, ufRate
+      currency, ufTotal, ufRate,
+      ...(monthVal ? { month: monthVal } : {})
     });
     save(); render();
     const msg = currency==='UF'
@@ -1670,6 +1676,70 @@ const App = (() => {
     else                          state.movements      = state.movements.filter(m=>m.id!==s.assignedId);
     state.shared = state.shared.filter(s=>s.id!==id);
     save(); render(); toast('Eliminado');
+  }
+
+  function forwardShared() {
+    const ids = [..._selectedShared];
+    if(!ids.length) { toast('Selecciona al menos un ítem'); return; }
+    const nextMk = addMonths(todayMk(), 1);
+    let count = 0;
+    ids.forEach(id => {
+      const s = state.shared.find(x=>x.id===id);
+      if(!s) return;
+      const mid = 'm'+Date.now()+count;
+      state.movements.push({id:mid, item:s.name, amount:s.myAmount, category:'', date:nextMk+'-01'});
+      state.shared.push({
+        id:'sh'+Date.now()+(count+1),
+        name:s.name, totalAmount:s.totalAmount, myPercent:s.myPercent, myAmount:s.myAmount,
+        assignedAs:'monthly', assignedId:mid,
+        createdAt:new Date().toISOString(),
+        month:nextMk,
+        currency:s.currency||'CLP', ufTotal:s.ufTotal||null, ufRate:s.ufRate||null
+      });
+      count++;
+    });
+    _selectedShared.clear();
+    save(); render();
+    toast(`${count} gasto${count>1?'s':''} traspasado${count>1?'s':''} → ${fmtMonthLabel(nextMk)}`);
+  }
+
+  function editShared(id) {
+    _editingShared = id;
+    const el = document.getElementById('main-content');
+    if(el) el.innerHTML = renderCompartidos();
+  }
+
+  function saveEditShared(id) {
+    const s = state.shared.find(x=>x.id===id);
+    if(!s) return;
+    const nameEl  = document.getElementById('sh-edit-name');
+    const totalEl = document.getElementById('sh-edit-total');
+    const pctEl   = document.getElementById('sh-edit-pct');
+    const monthEl = document.getElementById('sh-edit-month');
+    const name    = (nameEl?.value||'').trim();
+    const total   = parseFloat(totalEl?.value);
+    const pct     = parseFloat(pctEl?.value);
+    const month   = monthEl?.value || null;
+    if(!name)            { toast('Nombre requerido'); return; }
+    if(!total||total<=0) { toast('Monto requerido'); return; }
+    if(!pct||pct<=0||pct>100){ toast('% entre 1 y 100'); return; }
+    const myAmount = Math.round(total * pct / 100);
+    // Actualizar movimiento vinculado si existe
+    const mov = state.movements.find(m=>m.id===s.assignedId);
+    if(mov) { mov.item = name; mov.amount = myAmount; if(month) mov.date = month+'-01'; }
+    const fix = state.fixedExpenses.find(f=>f.id===s.assignedId);
+    if(fix) { fix.item = name; fix.amount = myAmount; }
+    // Actualizar shared
+    s.name = name; s.totalAmount = total; s.myPercent = pct; s.myAmount = myAmount;
+    if(month) s.month = month; else delete s.month;
+    _editingShared = null;
+    save(); render(); toast('Actualizado ✓');
+  }
+
+  function cancelEditShared() {
+    _editingShared = null;
+    const el = document.getElementById('main-content');
+    if(el) el.innerHTML = renderCompartidos();
   }
 
   function toggleSharedSelect(id) {
@@ -1840,53 +1910,98 @@ const App = (() => {
     const cats = [...(state.fixedCats||DEFAULT_FIXED_CATS), ...(state.movCats||DEFAULT_MOV_CATS)];
     const uniqueCats = [...new Set(cats)];
     const catOpts = uniqueCats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    const nowMk = todayMk();
 
-    let list = '';
+    // ── Separar ítems actuales vs futuros ─────────────────────────────
+    const currentItems = state.shared.filter(s => !s.month || s.month <= nowMk);
+    const futureItems  = state.shared.filter(s =>  s.month && s.month >  nowMk);
+
+    // ── Helper: renderizar un ítem (actual o futuro) ───────────────────
+    const renderItem = (s, isFutureItem) => {
+      const sel = _selectedShared.has(s.id);
+      if(_editingShared === s.id) {
+        // Formulario de edición inline
+        return `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:8px;border:2px solid var(--brand)">
+          <div style="font-size:.78rem;font-weight:800;color:var(--brand);margin-bottom:2px">✏️ Editando: ${esc(s.name)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:.68rem">Nombre</label>
+              <input id="sh-edit-name" value="${esc(s.name)}" maxlength="60" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);font-family:inherit"/></div>
+            <div><label style="font-size:.68rem">Monto total</label>
+              <input id="sh-edit-total" type="number" value="${s.totalAmount}" min="0" step="any" inputmode="decimal" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);font-family:inherit"/></div>
+            <div><label style="font-size:.68rem">Mi % (1–100)</label>
+              <input id="sh-edit-pct" type="number" value="${s.myPercent}" min="1" max="100" step="any" inputmode="decimal" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);font-family:inherit"/></div>
+            <div><label style="font-size:.68rem">Mes (opcional)</label>
+              <input id="sh-edit-month" type="month" value="${s.month||''}" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);font-family:inherit"/></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button onclick="App.cancelEditShared()" style="font-size:.78rem;padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;background:none;color:var(--text-2);cursor:pointer;font-family:inherit">Cancelar</button>
+            <button onclick="App.saveEditShared('${s.id}')" style="font-size:.78rem;font-weight:700;padding:6px 16px;border:none;border-radius:8px;background:var(--brand);color:#fff;cursor:pointer;font-family:inherit">Guardar</button>
+          </div>
+        </div>`;
+      }
+      const typeLbl = s.assignedAs==='fixed'
+        ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
+        : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
+      const futureLbl = isFutureItem
+        ? `<span style="font-size:.68rem;font-weight:700;color:#d97706;background:#fef3c7;padding:2px 7px;border-radius:5px">${fmtMonthLabel(s.month).toUpperCase()}</span>`
+        : '';
+      return `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:6px;${sel?'border:2px solid #0891b2;':''}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="display:flex;align-items:center;cursor:pointer;flex-shrink:0">
+            <input type="checkbox" ${sel?'checked':''} onchange="App.toggleSharedSelect('${s.id}')"
+              style="width:18px;height:18px;accent-color:#0891b2;cursor:pointer;flex-shrink:0"/>
+          </label>
+          <div style="flex:1;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="movement-name">${esc(s.name)}</div>
+              <div style="display:flex;gap:6px;margin-top:3px;align-items:center;flex-wrap:wrap">${typeLbl}${futureLbl}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="movement-amount">${s.currency==='UF' && s.ufTotal ? `${Math.round(s.ufTotal*s.myPercent/100*100)/100} UF` : disp(s.myAmount)}</div>
+              ${s.currency==='UF' ? `<div style="font-size:.68rem;color:var(--text-2)">${disp(s.myAmount)}</div>` : ''}
+              <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${s.currency==='UF' && s.ufTotal ? `${s.ufTotal} UF` : disp(s.totalAmount)}</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;border-top:1px solid var(--border)">
+          <button onclick="App.editShared('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid var(--border);border-radius:7px;background:none;color:var(--text-2);cursor:pointer;font-family:inherit">✏️ Editar</button>
+          <button onclick="App.generateShareCode('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid #0891b2;border-radius:7px;background:none;color:#0891b2;cursor:pointer;font-family:inherit">📤 Compartir</button>
+          <button onclick="App.deleteShared('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid var(--danger);border-radius:7px;background:none;color:var(--danger);cursor:pointer;font-family:inherit">✕</button>
+        </div>
+      </div>`;
+    };
+
+    // ── Barra de acción grupal ─────────────────────────────────────────
     const selCount = _selectedShared.size;
-    // Barra de acción grupal
     const groupBar = state.shared.length ? `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;min-height:32px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;min-height:34px">
         <span style="font-size:.72rem;color:var(--text-2)">${selCount>0?`${selCount} seleccionado${selCount>1?'s':''}`:''}</span>
         ${selCount>0 ? `
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
             <button onclick="App.clearSharedSelect()" style="font-size:.72rem;padding:5px 11px;border:1.5px solid var(--border);border-radius:7px;background:none;color:var(--text-2);cursor:pointer;font-family:inherit">Limpiar</button>
-            <button onclick="App.generateGroupCode()" style="font-size:.73rem;font-weight:700;padding:5px 13px;border:none;border-radius:7px;background:#0891b2;color:#fff;cursor:pointer;font-family:inherit">📦 Código grupal</button>
+            <button onclick="App.forwardShared()" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:none;border-radius:7px;background:#d97706;color:#fff;cursor:pointer;font-family:inherit">📅 Sig. mes</button>
+            <button onclick="App.generateGroupCode()" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:none;border-radius:7px;background:#0891b2;color:#fff;cursor:pointer;font-family:inherit">📦 Código grupal</button>
           </div>` : ''}
       </div>` : '';
 
-    if(!state.shared.length) {
-      list = `<div class="empty-state"><p>Sin gastos compartidos aún.<br>Agrega un gasto que divides con alguien.</p></div>`;
+    // ── Listas ────────────────────────────────────────────────────────
+    let currentList = '';
+    if(!currentItems.length) {
+      currentList = `<div class="empty-state" style="padding:16px 0"><p>Sin gastos compartidos este mes.</p></div>`;
     } else {
-      state.shared.forEach(s=>{
-        const sel = _selectedShared.has(s.id);
-        const typeLbl = s.assignedAs==='fixed'
-          ? `<span style="font-size:.68rem;font-weight:700;color:var(--fixed);background:var(--fixed-light);padding:2px 7px;border-radius:5px">FIJO</span>`
-          : `<span style="font-size:.68rem;font-weight:700;color:#0284c7;background:#e0f2fe;padding:2px 7px;border-radius:5px">MENSUAL</span>`;
-        list += `<div class="movement-item" style="flex-direction:column;align-items:stretch;gap:6px;${sel?'border:2px solid #0891b2;':''}">
-          <div style="display:flex;align-items:center;gap:10px">
-            <label style="display:flex;align-items:center;cursor:pointer;flex-shrink:0">
-              <input type="checkbox" ${sel?'checked':''} onchange="App.toggleSharedSelect('${s.id}')"
-                style="width:18px;height:18px;accent-color:#0891b2;cursor:pointer;flex-shrink:0"/>
-            </label>
-            <div style="flex:1;display:flex;align-items:center;justify-content:space-between">
-              <div>
-                <div class="movement-name">${esc(s.name)}</div>
-                <div style="display:flex;gap:6px;margin-top:3px;align-items:center">${typeLbl}</div>
-              </div>
-              <div style="text-align:right">
-                <div class="movement-amount">${s.currency==='UF' && s.ufTotal ? `${Math.round(s.ufTotal*s.myPercent/100*100)/100} UF` : disp(s.myAmount)}</div>
-                ${s.currency==='UF' ? `<div style="font-size:.68rem;color:var(--text-2)">${disp(s.myAmount)}</div>` : ''}
-                <div style="font-size:.68rem;color:var(--text-2)">Mi ${s.myPercent}% de ${s.currency==='UF' && s.ufTotal ? `${s.ufTotal} UF` : disp(s.totalAmount)}</div>
-                ${s.currency==='UF' && s.ufRate ? `<div style="font-size:.6rem;color:var(--text-2);opacity:.7">UF al ${new Date(s.createdAt).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}: $${Math.round(s.ufRate).toLocaleString('es-CL')}</div>` : ''}
-              </div>
-            </div>
+      currentList = currentItems.map(s => renderItem(s, false)).join('');
+    }
+
+    let futureSection = '';
+    if(futureItems.length) {
+      futureSection = `
+        <div style="margin-top:18px">
+          <p style="font-size:.68rem;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📅 Se viene… (${futureItems.length})</p>
+          <div style="background:var(--warn-bg);border:1.5px solid var(--warn-border);border-radius:12px;padding:10px 12px;margin-bottom:6px">
+            <p style="font-size:.72rem;color:#92400e">Estos gastos no suman al mes actual. Se activarán cuando llegue su mes.</p>
           </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;border-top:1px solid var(--border)">
-            <button onclick="App.generateShareCode('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid #0891b2;border-radius:7px;background:none;color:#0891b2;cursor:pointer;font-family:inherit">📤 Compartir</button>
-            <button onclick="App.deleteShared('${s.id}')" style="font-size:.73rem;font-weight:700;padding:5px 12px;border:1.5px solid var(--danger);border-radius:7px;background:none;color:var(--danger);cursor:pointer;font-family:inherit">Eliminar</button>
-          </div>
+          ${futureItems.map(s => renderItem(s, true)).join('')}
         </div>`;
-      });
     }
 
     return `
@@ -1914,6 +2029,10 @@ const App = (() => {
                 <option value="fixed">Gasto Fijo (mensual recurrente)</option>
                 <option value="monthly">Gasto del mes (único)</option>
               </select></div>
+            <div>
+              <label>¿En qué mes cae? <span style="font-weight:400;color:var(--text-2)">(opcional — vacío = mes actual)</span></label>
+              <input type="month" id="sh-month" min="${nowMk}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;background:var(--card);color:var(--text);font-family:inherit"/>
+            </div>
             <div><label>Categoría</label>
               <select id="sh-cat" class="cat-select"><option value="">Sin categoría</option>${catOpts}</select></div>
             <button onclick="App.addShared()" style="width:100%;padding:13px;background:#0891b2;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit">+ Agregar gasto compartido</button>
@@ -1932,9 +2051,10 @@ const App = (() => {
       </div>
 
       <div style="padding:12px 16px 24px">
-        <p style="font-size:.68rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mis gastos compartidos (${state.shared.length})</p>
+        <p style="font-size:.68rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mis gastos compartidos (${currentItems.length})</p>
         ${groupBar}
-        ${list}
+        ${currentList}
+        ${futureSection}
       </div>
 
       <textarea id="sh-code-out" style="position:absolute;left:-9999px;top:0" readonly></textarea>
@@ -2030,7 +2150,9 @@ const App = (() => {
     permanentDeleteMovement, restoreMovement,
     toggleDark,
     addShared, deleteShared, generateShareCode, importSharedCode, updateMyAmount, setSharedCurrency,
-    toggleSharedSelect, generateGroupCode, clearSharedSelect: ()=>{ _selectedShared.clear(); const el=document.getElementById('main-content'); if(el) el.innerHTML=renderCompartidos(); },
+    toggleSharedSelect, generateGroupCode, forwardShared,
+    editShared, saveEditShared, cancelEditShared,
+    clearSharedSelect: ()=>{ _selectedShared.clear(); const el=document.getElementById('main-content'); if(el) el.innerHTML=renderCompartidos(); },
     _toast: toast,
     addMonths, setPaymentMethod,
     editFixed, saveEditFixed, cancelEditFixed,
