@@ -1861,6 +1861,7 @@ const App = (() => {
       const theirAmt = Math.round(s.totalAmount * theirPct / 100);
       return {
         name: s.name, total: s.totalAmount, pct: theirPct, amt: theirAmt,
+        cat: s.category||'', assignedAs: s.assignedAs||'monthly',
         ...(s.currency==='UF' && s.ufTotal ? {
           currency:'UF', ufTotal:s.ufTotal, ufRate:s.ufRate,
           ufAmt: Math.round(s.ufTotal * theirPct / 100 * 100) / 100
@@ -1900,6 +1901,8 @@ const App = (() => {
     const theirAmt = Math.round(s.totalAmount * theirPct / 100);
     const payload = {
       v:1, name:s.name, total:s.totalAmount, pct:theirPct, amt:theirAmt,
+      cat: s.category||'',
+      assignedAs: s.assignedAs||'monthly',
       ...(s.currency==='UF' && s.ufTotal ? {
         currency:'UF', ufTotal:s.ufTotal, ufRate:s.ufRate,
         ufAmt: Math.round(s.ufTotal * theirPct / 100 * 100) / 100
@@ -1936,14 +1939,16 @@ const App = (() => {
           if(isUF && it.ufRate) _ufCache = { rate: it.ufRate, date: new Date().toISOString().slice(0,10) };
           const myAmt = isUF ? Math.round(it.ufAmt * (it.ufRate||0)) : it.amt;
           const mid = 'm'+Date.now()+'_imp'+importados;
-          state.movements.push({id:mid, item:it.name, amount:myAmt, category:'', date:todayMk()+'-15'});
+          const cat = it.cat||'';
+          const assignedAs = it.assignedAs||'monthly';
+          state.movements.push({id:mid, item:it.name, amount:myAmt, category:cat, date:todayMk()+'-15'});
           state.shared.push({
             id:'sh'+Date.now()+'_imp'+importados,
             name: it.name,
             totalAmount: it.total,
             myPercent: it.pct,
             myAmount: myAmt,
-            assignedAs: 'monthly',
+            assignedAs,
             assignedId: mid,
             createdAt: new Date().toISOString(),
             ...(isUF ? { currency:'UF', ufTotal:it.ufTotal, ufRate:it.ufRate } : {})
@@ -1969,13 +1974,17 @@ const App = (() => {
         render();
       }
       // Pre-llenar el formulario
-      const nameEl  = document.getElementById('sh-name');
-      const totalEl = document.getElementById('sh-total');
-      const pctEl   = document.getElementById('sh-pct');
-      const myAmt   = document.getElementById('sh-myamt');
-      if(nameEl)  nameEl.value  = payload.name;
-      if(totalEl) totalEl.value = isUFPayload ? payload.ufTotal : payload.total;
-      if(pctEl)   pctEl.value   = payload.pct;
+      const nameEl   = document.getElementById('sh-name');
+      const totalEl  = document.getElementById('sh-total');
+      const pctEl    = document.getElementById('sh-pct');
+      const myAmt    = document.getElementById('sh-myamt');
+      const catEl    = document.getElementById('sh-cat');
+      const assignEl = document.getElementById('sh-assign');
+      if(nameEl)   nameEl.value   = payload.name;
+      if(totalEl)  totalEl.value  = isUFPayload ? payload.ufTotal : payload.total;
+      if(pctEl)    pctEl.value    = payload.pct;
+      if(catEl && payload.cat)    catEl.value    = payload.cat;
+      if(assignEl && payload.assignedAs) assignEl.value = payload.assignedAs;
       if(myAmt) {
         if(isUFPayload && payload.ufAmt) {
           const clpAmt = Math.round(payload.ufAmt * (payload.ufRate||0));
