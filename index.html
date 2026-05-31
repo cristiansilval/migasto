@@ -376,6 +376,7 @@
       <div class="header-username" id="header-username"></div>
     </div>
     <div class="header-right">
+      <button class="btn-eye-header" onclick="App.openQuickCapture('')" title="Gasto rápido" style="font-size:1.1rem;font-weight:900;letter-spacing:-.5px">⚡</button>
       <button class="btn-eye-header" id="btn-refresh" onclick="App.forceRefresh()" title="Forzar actualización"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg></button>
       <button class="btn-eye-header" id="btn-eye" title="Mostrar/ocultar montos"></button>
       <button class="btn-eye-header" id="btn-settings-header" onclick="App.setTab('settings')" title="Ajustes">
@@ -2217,6 +2218,110 @@ const App = (() => {
     if(su) su.addEventListener('keydown', e=>{ if(e.key==='Enter') saveUsername(); });
   }
 
+  // ── Captura rápida (Share Target + Shortcut) ─────────────────────
+  function _parseAmount(text) {
+    if(!text) return null;
+    // Patrones: $15.000 | $ 15000 | CLP 15.000 | 15000 pesos | 15.000 CLP
+    const patterns = [
+      /\$\s*([\d.,]+)/,
+      /CLP\s*([\d.,]+)/i,
+      /([\d.,]+)\s*(?:pesos?|clp)/i,
+      /monto[:\s]+([\d.,]+)/i,
+      /total[:\s]+([\d.,]+)/i,
+      /pagaste?\s*\$?\s*([\d.,]+)/i,
+      /compra[:\s]+\$?\s*([\d.,]+)/i,
+    ];
+    for(const p of patterns) {
+      const m = text.match(p);
+      if(m) {
+        const raw = m[1].replace(/\./g,'').replace(',','.');
+        const n = parseFloat(raw);
+        if(n > 0) return Math.round(n);
+      }
+    }
+    return null;
+  }
+
+  function _parseDescription(text) {
+    if(!text) return '';
+    // Intentar extraer comercio/descripción del texto
+    const patterns = [
+      /en\s+([A-ZÁÉÍÓÚa-záéíóú][^\n$\d]{2,30})/,
+      /comercio[:\s]+([^\n$\d]{2,30})/i,
+      /([A-ZÁÉÍÓÚ][A-Za-záéíóú\s]{2,20})(?:\s*\$)/,
+    ];
+    for(const p of patterns) {
+      const m = text.match(p);
+      if(m) return m[1].trim();
+    }
+    return '';
+  }
+
+  function openQuickCapture(sharedText) {
+    const existing = document.getElementById('quick-capture-modal');
+    if(existing) existing.remove();
+
+    const amount  = _parseAmount(sharedText);
+    const desc    = _parseDescription(sharedText);
+
+    const modal = document.createElement('div');
+    modal.id = 'quick-capture-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:var(--card);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:24px 20px 40px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800;font-size:1.1rem;color:var(--text)">⚡ Gasto rápido</div>
+            ${sharedText ? `<div style="font-size:.72rem;color:var(--text-2);margin-top:2px">Detectado desde notificación</div>` : ''}
+          </div>
+          <button onclick="document.getElementById('quick-capture-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-2);min-width:36px;min-height:36px">✕</button>
+        </div>
+        ${sharedText ? `<div style="background:var(--bg);border-radius:10px;padding:10px 12px;font-size:.78rem;color:var(--text-2);max-height:60px;overflow:hidden;text-overflow:ellipsis">${sharedText.slice(0,120)}${sharedText.length>120?'…':''}</div>` : ''}
+        <div>
+          <label style="font-size:.72rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">¿En qué gastaste?</label>
+          <input id="qc-item" type="text" value="${esc(desc)}" placeholder="Ej: Almuerzo, Metro, Café..." maxlength="60"
+            style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:1rem;font-family:inherit;background:var(--bg);color:var(--text)"/>
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">¿Cuánto?</label>
+          <input id="qc-amount" type="number" value="${amount||''}" placeholder="Ej: 6000" inputmode="numeric" min="1"
+            style="width:100%;padding:12px 14px;border:1.5px solid ${amount?'var(--brand)':'var(--border)'};border-radius:12px;font-size:1.2rem;font-weight:700;font-family:inherit;background:var(--bg);color:var(--text)"/>
+          ${amount ? `<div style="font-size:.72rem;color:var(--brand);margin-top:4px;font-weight:600">✓ Monto detectado automáticamente</div>` : ''}
+        </div>
+        <button onclick="App.saveQuickCapture()" style="width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px">
+          Guardar gasto
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+    // Focus en el campo correcto
+    setTimeout(()=>{
+      const el = amount
+        ? document.getElementById('qc-item')
+        : document.getElementById('qc-amount');
+      if(el) el.focus();
+    }, 150);
+  }
+
+  function saveQuickCapture() {
+    const item = (document.getElementById('qc-item')?.value||'').trim();
+    const amt  = parseFloat(document.getElementById('qc-amount')?.value||0);
+    if(!amt||amt<=0) { toast('Ingresa el monto'); return; }
+    const name = item || 'Gasto rápido';
+    state.movements.push({
+      id: 'm'+Date.now(),
+      item: name,
+      amount: Math.round(amt),
+      category: '',
+      date: new Date().toISOString(),
+      paymentMethod: 'cash'
+    });
+    save();
+    document.getElementById('quick-capture-modal')?.remove();
+    toast(`"${name}" guardado — ${fmt(Math.round(amt))}`);
+    if(state.tab === 'daily') render();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────
   function init() {
     load(); render();
@@ -2224,6 +2329,16 @@ const App = (() => {
     document.getElementById('modal-settings').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeSettings(); });
     document.getElementById('income-input').addEventListener('keydown', e=>{ if(e.key==='Enter') saveSettings(); });
     if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(()=>{});
+
+    // Detectar Share Target o shortcut ?quick=1
+    const params = new URLSearchParams(window.location.search);
+    const sharedText  = params.get('text') || params.get('title') || '';
+    const isQuick     = params.get('quick') === '1';
+    if(sharedText || isQuick) {
+      // Limpiar URL sin recargar
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => openQuickCapture(sharedText), 400);
+    }
   }
 
   function doUpdate() {
@@ -2268,6 +2383,7 @@ const App = (() => {
     addSavingUI, deleteSaving, addIncomeItemUI, deleteIncomeItem,
     saveSettingsInline, saveUsername, goMonth,
     doUpdate, forceRefresh, refreshIfSettings,
+    openQuickCapture, saveQuickCapture,
     addSavingsCatUI, deleteSavingsCat,
     toggleSection,
     addMovCatUI, deleteMovCat, addFixedCatUI, deleteFixedCat,
