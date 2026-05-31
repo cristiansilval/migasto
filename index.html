@@ -1327,7 +1327,7 @@ const App = (() => {
 
   function renderSavingsTab(mk) {
     const todayK  = todayMk();
-    const hasNext = mk < todayK;
+    const hasNext = mk < addMonths(todayK, 12); // hasta 12 meses adelante
     const allTime = savingsTotal();  // sin filtro de mes = total histórico
 
     const nav = `<div class="month-nav">
